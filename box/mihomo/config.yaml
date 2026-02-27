@@ -32,7 +32,7 @@ sniffer:
     - 'rule-set:Fake-IP-Filter'
 
 tun:
-  enable: false
+  enable: true
   device: meta
   stack: gvisor
   dns-hijack: [any:53, tcp://any:53]
