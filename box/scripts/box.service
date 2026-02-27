@@ -322,7 +322,7 @@ prepare_mihomo() {
   # 写入 external_ui，如未配置
   mihomo_external_ui=$(busybox awk '!/^ *#/ && /external-ui: /{print $1}' "${mihomo_config}")
   if [ -z "${mihomo_external_ui}" ]; then
-    printf "\nexternal-ui: ./dashboard" >> "${mihomo_config}"
+    printf "\nexternal-ui: ./zashboard" >> "${mihomo_config}"
   fi
 
   # 写入 tproxy-port，如未配置
