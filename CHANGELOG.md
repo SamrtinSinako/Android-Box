@@ -1,4 +1,7 @@
 #### Changelog Box - 28-02-2026
+- 修复脚本
+
+#### Changelog Box - 28-02-2026
 - 修复Box日志
 
 #### Changelog Android Box - 28-02-2026
