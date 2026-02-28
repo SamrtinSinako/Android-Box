@@ -1,4 +1,7 @@
 #### Changelog Box - 28-02-2026
+- 更改模块名称
+
+#### Changelog Box - 28-02-2026
 - 修复脚本
 
 #### Changelog Box - 28-02-2026
