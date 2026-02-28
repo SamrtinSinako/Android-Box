@@ -1,3 +1,6 @@
+#### Changelog Android Box - 28-02-2026
+- 修复日志
+
 #### Changelog Box - 27-02-2026
 - 更新了节点信息
 
