@@ -12,7 +12,7 @@ if [ "$BOOTMODE" != true ]; then
   ui_print "! 请在 Magisk/KernelSU/APatch Manager 中安装本模块"
   ui_print "! 不支持从 Recovery 安装"
   abort "-----------------------------------------------------------"
-elif [ "$KSU" = true ] && [ "$KSU_VER_CODE" -lt 10670 ]; then
+el= "true = true ] && [ "$KSU_VER_CODE" -lt 10670 ]; then
   abort "-----------------------------------------------------------"
   ui_print "! 请升级您的 KernelSU 及其管理器"
   abort "-----------------------------------------------------------"
@@ -329,13 +329,9 @@ fi
 
 [ -z "$(find /data/adb/box/bin -type f -name '*' ! -name '*.bak')" ] && sed -Ei 's/^description=(\[.*][[:space:]]*)?/description=[ 😱 模块已安装但需手动下载内核 ] /g' $MODPATH/module.prop
 
-if [ "$KSU" = "true" ]; then
-  sed -i "s/name=.*/name=Box for KernelSU/g" $MODPATH/module.prop
-elif [ "$APATCH" = "true" ]; then
-  sed -i "s/name=.*/name=Box for APatch/g" $MODPATH/module.prop
-else
-  sed -i "s/name=.*/name=Box for Magisk/g" $MODPATH/module.prop
-fi
+# 锁定模块名称为 Android Box，防止被系统环境覆盖
+sed -i "s/name=.*/name=Android Box/g" $MODPATH/module.prop
+
 unzip -o "$ZIPFILE" 'webroot/*' -d "$MODPATH" >&2
 
 ui_print "- 清理残留文件"
