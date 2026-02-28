@@ -1,0 +1,182 @@
+mixed-port: 7890
+redir-port: 9797
+tproxy-port: 9898
+mode: Rule
+bind-address: '*'
+ipv6: true
+allow-lan: true
+unified-delay: true
+tcp-concurrent: true
+log-level: error
+find-process-mode: strict
+external-controller: 127.0.0.1:9090
+external-ui: ./zashboard
+
+profile:
+  store-selected: true
+  store-fake-ip: true
+
+sniffer:
+  enable: true
+  parse-pure-ip: true
+  override-destination: true
+  sniff:
+    HTTP:
+      ports: [80, 8080-8880]
+    TLS:
+      ports: [443, 8443]
+  skip-domain:
+    - 'Mv3-*-*.googlevideo.com'
+    - 'rule-set:private_domain'
+    - 'rule-set:Fake-IP-Filter'
+
+dns:
+  enhanced-mode: fake-ip
+  enable: true
+  ipv6: true
+  listen: 0.0.0.0:1053
+  fake-ip-range: 198.18.0.1/16
+  fake-ip-filter:
+    - "rule-set:Fake-IP-Filter"
+  proxy-server-nameserver:
+    - 223.5.5.5
+    - 120.53.53.53
+  nameserver-policy:
+    "rule-set:cn_domain":
+      - 223.5.5.5
+      - 120.53.53.53
+  nameserver:
+    - 8.8.8.8
+    - 1.1.1.1
+
+proxies:
+  - name: "香港节点"
+    type: socks5
+    server: 61.141.236.11
+    port: 12004
+    username: qq719177532
+    password: myangelbu4ni@
+
+  - name: "DNS_Hijack"
+    type: dns
+
+  - name: "US"
+    type: ss
+    server: cf.130519.xyz
+    port: 443
+    cipher: none
+    password: a1f15a9f-4a0a-42f7-a564-49046ad0e222
+    plugin: v2ray-plugin
+    plugin-opts:
+      mode: websocket
+      host: ss.sinalemisaki.dpdns.org
+      path: /a1f15a9f-4a0a-42f7-a564-49046ad0e222/?ed=2560
+      tls: true
+      mux: false
+      allowInsecure: true
+    client-fingerprint: chrome
+
+proxy-groups:
+  - name: "国外代理"
+    type: select
+    proxies:
+      - "香港节点"
+      - "US"
+    icon: https://ghfast.top/raw.githubusercontent.com/Koolson/Qure/refs/heads/master/IconSet/Color/Proxy.png
+
+  - name: "ChatGPT"
+    type: select
+    proxies:
+      - "US"
+    icon: https://ghfast.top/raw.githubusercontent.com/Koolson/Qure/refs/heads/master/IconSet/Color/ChatGPT.png
+
+  - name: "国内直连"
+    type: select
+    proxies:
+      - DIRECT
+      - "香港节点"
+    icon: https://ghfast.top/raw.githubusercontent.com/Koolson/Qure/refs/heads/master/IconSet/Color/China.png
+
+  - name: "漏网之鱼"
+    type: select
+    proxies:
+      - "国外代理"
+      - "国内直连"
+    icon: https://ghfast.top/raw.githubusercontent.com/Koolson/Qure/refs/heads/master/IconSet/Color/Final.png
+
+rule-providers:
+  openai_domain:
+    type: http
+    behavior: domain
+    format: mrs
+    interval: 86400
+    path: ./rule_provider/openai_domain.mrs
+    url: "https://ghfast.top/github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geosite/openai.mrs"
+    proxy: DIRECT
+  Fake-IP-Filter:
+    type: http
+    behavior: domain
+    format: mrs
+    interval: 86400
+    path: ./rule_provider/Fake-IP-Filter.mrs
+    url: "https://ghfast.top/github.com/DustinWin/ruleset_geodata/raw/refs/heads/mihomo-ruleset/fakeip-filter.mrs"
+    proxy: DIRECT
+  proxy_domain:
+    type: http
+    behavior: domain
+    format: mrs
+    interval: 86400
+    path: ./rule_provider/proxy_domain.mrs
+    url: "https://ghfast.top/github.com/DustinWin/ruleset_geodata/raw/refs/heads/mihomo-ruleset/proxy.mrs"
+    proxy: DIRECT
+  cn_ip:
+    type: http
+    behavior: ipcidr
+    format: mrs
+    interval: 86400
+    path: ./rule_provider/cn_ip.mrs
+    url: "https://ghfast.top/github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geoip/cn.mrs"
+    proxy: DIRECT
+  private_ip:
+    type: http
+    behavior: ipcidr
+    format: mrs
+    interval: 86400
+    path: ./rule_provider/private_ip.mrs
+    url: "https://ghfast.top/github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geoip/private.mrs"
+    proxy: DIRECT
+  cn_domain:
+    type: http
+    behavior: domain
+    format: mrs
+    interval: 86400
+    path: ./rule_provider/cn_domain.mrs
+    url: "https://ghfast.top/github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geosite/cn.mrs"
+    proxy: DIRECT
+  private_domain:
+    type: http
+    behavior: domain
+    format: mrs
+    interval: 86400
+    path: ./rule_provider/private_domain.mrs
+    url: "https://ghfast.top/github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geosite/private.mrs"
+    proxy: DIRECT
+  fcm_push:
+    type: http
+    behavior: domain
+    format: mrs
+    interval: 86400
+    path: ./rule_provider/googlefcm.mrs
+    url: "https://ghfast.top/github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geosite/googlefcm.mrs"
+    proxy: DIRECT
+
+rules:
+  - DST-PORT,53,DNS_Hijack
+  - AND,((NETWORK,udp),(DST-PORT,443)),REJECT
+  - RULE-SET,openai_domain,ChatGPT
+  - PROCESS-NAME,com.anthropic.claude,US
+  - PROCESS-NAME,com.google.android.googlequicksearchbox,US
+  - RULE-SET,fcm_push,DIRECT
+  - RULE-SET,proxy_domain,国外代理
+  - OR,((RULE-SET,cn_ip),(RULE-SET,cn_domain),(RULE-SET,private_ip),(RULE-SET,private_domain)),国内直连
+  - MATCH,漏网之鱼

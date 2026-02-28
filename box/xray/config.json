@@ -1,0 +1,281 @@
+{
+  "log": {
+    "loglevel": "error",
+    "access": "/data/adb/box/run/xray-access.log",
+    "error": "/data/adb/box/run/xray-error.log"
+  },
+  "dns": {
+    "servers": [
+      {
+        "tag": "fakeip",
+        "address": "fakedns",
+        "domains": [
+          "full:www.google.com",
+          "domain:openai.com",
+          "domain:anthropic.com",
+          "domain:github.com",
+          "domain:twitter.com",
+          "domain:youtube.com"
+        ]
+      },
+      {
+        "tag": "ali",
+        "address": "https://223.5.5.5/dns-query",
+        "domains": [
+          "domain:baidu.com",
+          "domain:qq.com",
+          "domain:taobao.com",
+          "domain:jd.com",
+          "domain:bilibili.com",
+          "domain:weibo.com",
+          "domain:163.com",
+          "domain:126.com",
+          "domain:alipay.com",
+          "domain:alibaba.com",
+          "domain:tencent.com",
+          "domain:wechat.com",
+          "domain:xiaomi.com",
+          "domain:huawei.com",
+          "domain:zhihu.com",
+          "domain:douyin.com",
+          "domain:douban.com",
+          "domain:iqiyi.com",
+          "domain:youku.com",
+          "domain:meituan.com",
+          "domain:dianping.com"
+        ]
+      },
+      {
+        "tag": "google",
+        "address": "https://8.8.8.8/dns-query"
+      }
+    ],
+    "rules": [
+      {
+        "domain": [
+          "domain:baidu.com",
+          "domain:qq.com",
+          "domain:taobao.com",
+          "domain:jd.com",
+          "domain:bilibili.com",
+          "domain:weibo.com",
+          "domain:163.com",
+          "domain:126.com",
+          "domain:alipay.com",
+          "domain:alibaba.com",
+          "domain:tencent.com",
+          "domain:wechat.com",
+          "domain:xiaomi.com",
+          "domain:huawei.com",
+          "domain:zhihu.com",
+          "domain:douyin.com",
+          "domain:douban.com",
+          "domain:iqiyi.com",
+          "domain:youku.com",
+          "domain:meituan.com",
+          "domain:dianping.com"
+        ],
+        "server": "ali"
+      },
+      {
+        "query_type": [
+          "A",
+          "AAAA"
+        ],
+        "server": "fakeip"
+      }
+    ],
+    "final": "google",
+    "queryStrategy": "UseIPv4",
+    "independent_cache": true
+  },
+  "fakedns": {
+    "ipPool": "198.18.0.0/15",
+    "poolSize": 65535
+  },
+  "inbounds": [
+    {
+      "tag": "mixed-in",
+      "protocol": "socks",
+      "listen": "127.0.0.1",
+      "port": 7890,
+      "settings": {
+        "auth": "noauth",
+        "udp": true
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls",
+          "quic",
+          "fakedns"
+        ],
+        "routeOnly": false
+      }
+    },
+    {
+      "tag": "tproxy-in",
+      "protocol": "dokodemo-door",
+      "listen": "0.0.0.0",
+      "port": 9898,
+      "settings": {
+        "network": "tcp,udp",
+        "followRedirect": true
+      },
+      "streamSettings": {
+        "sockopt": {
+          "tproxy": "tproxy"
+        }
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls",
+          "quic",
+          "fakedns"
+        ],
+        "routeOnly": false
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "🇭🇰 香港SOCKS",
+      "protocol": "socks",
+      "settings": {
+        "servers": [
+          {
+            "address": "61.141.236.11",
+            "port": 12004,
+            "users": [
+              {
+                "user": "qq719177532",
+                "pass": "myangelbu4ni@"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "tag": "🇺🇸 美国Reality01",
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": "134.195.101.129",
+            "port": 443,
+            "users": [
+              {
+                "id": "b305ddfe-46cd-4fa4-8cd1-78ed12372b9d",
+                "encryption": "none",
+                "flow": "xtls-rprx-vision"
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "serverName": "download.visualstudio.microsoft.com",
+          "fingerprint": "ios",
+          "publicKey": "FM0qkboWVs40429dRef1ow-S-FeRLAIO9iy-pVrNxwA",
+          "shortId": "edd28d44"
+        }
+      }
+    },
+    {
+      "tag": "direct",
+      "protocol": "freedom",
+      "settings": {
+        "domainStrategy": "UseIP"
+      }
+    },
+    {
+      "tag": "block",
+      "protocol": "blackhole"
+    },
+    {
+      "tag": "dns-out",
+      "protocol": "dns"
+    }
+  ],
+  "routing": {
+    "domainStrategy": "IPIfNonMatch",
+    "rules": [
+      {
+        "type": "field",
+        "port": "53",
+        "network": "tcp,udp",
+        "outboundTag": "dns-out"
+      },
+      {
+        "type": "field",
+        "ip": [
+          "127.0.0.0/8",
+          "10.0.0.0/8",
+          "172.16.0.0/12",
+          "192.168.0.0/16"
+        ],
+        "outboundTag": "direct"
+      },
+      {
+        "type": "field",
+        "domain": [
+          "domain:baidu.com",
+          "domain:qq.com",
+          "domain:taobao.com",
+          "domain:jd.com",
+          "domain:bilibili.com",
+          "domain:weibo.com",
+          "domain:163.com",
+          "domain:126.com",
+          "domain:alipay.com",
+          "domain:alibaba.com",
+          "domain:tencent.com",
+          "domain:wechat.com",
+          "domain:xiaomi.com",
+          "domain:huawei.com",
+          "domain:zhihu.com",
+          "domain:douyin.com",
+          "domain:douban.com",
+          "domain:iqiyi.com",
+          "domain:youku.com",
+          "domain:meituan.com",
+          "domain:dianping.com"
+        ],
+        "outboundTag": "direct"
+      },
+      {
+        "type": "field",
+        "domain": [
+          "domain:gemini.google.com",
+          "domain:bard.google.com",
+          "domain:aistudio.google.com",
+          "domain:generativelanguage.googleapis.com",
+          "domain:googleapis.com",
+          "domain:gstatic.com",
+          "domain:accounts.google.com",
+          "domain:android.clients.google.com",
+          "domain:mtalk.google.com",
+          "domain:openai.com",
+          "domain:oaistatic.com",
+          "domain:oaiusercontent.com",
+          "domain:chatgpt.com",
+          "domain:anthropic.com",
+          "domain:claude.ai"
+        ],
+        "outboundTag": "🇺🇸 美国Reality01"
+      },
+      {
+        "type": "field",
+        "network": "tcp,udp",
+        "outboundTag": "🇭🇰 香港SOCKS"
+      }
+    ]
+  }
+}

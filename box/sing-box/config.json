@@ -1,0 +1,470 @@
+{
+  "log": {
+    "disabled": false,
+    "level": "fatal",
+    "timestamp": true,
+    "output": "/data/adb/box/run/sing-box.log"
+  },
+  "dns": {
+    "servers": [
+      {
+        "tag": "google",
+        "type": "https",
+        "server": "8.8.8.8",
+        "detour": "🌐 国外代理"
+      },
+      {
+        "tag": "ali",
+        "type": "https",
+        "server": "223.5.5.5"
+      },
+      {
+        "tag": "fakeip",
+        "type": "fakeip",
+        "inet4_range": "198.18.0.0/15",
+        "inet6_range": "fc00::/18"
+      }
+    ],
+    "rules": [
+      {
+        "rule_set": "cn_domain",
+        "action": "route",
+        "server": "ali"
+      },
+      {
+        "query_type": [
+          "A",
+          "AAAA"
+        ],
+        "action": "route",
+        "server": "fakeip",
+        "rewrite_ttl": 1
+      }
+    ],
+    "final": "google",
+    "independent_cache": true
+  },
+  "inbounds": [
+    {
+      "type": "mixed",
+      "listen": "127.0.0.1",
+      "listen_port": 7890
+    },
+    {
+      "type": "tproxy",
+      "tag": "tproxy-in",
+      "listen": "::",
+      "listen_port": 9898
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "🌐 国外代理",
+      "type": "selector",
+      "outbounds": [
+        "🇭🇰 香港节点",
+        "🇺🇸 美国节点",
+        "direct"
+      ],
+      "default": "🇭🇰 香港节点"
+    },
+    {
+      "tag": "🇭🇰 香港节点",
+      "type": "socks",
+      "server": "61.141.236.11",
+      "server_port": 12004,
+      "version": "5",
+      "username": "qq719177532",
+      "password": "myangelbu4ni@"
+    },
+    {
+      "tag": "🇺🇸 美国节点",
+      "type": "selector",
+      "default": "🇺🇸美国01-0.1倍 | 电信联通移动推荐",
+      "outbounds": [
+        "🇺🇸美国01-0.1倍 | 电信联通移动推荐",
+        "🇺🇸美国02-0.1倍 | 电信联通移动推荐",
+        "🇺🇸美国03-0.1倍 | 电信联通移动推荐",
+        "🇺🇸美国04-0.1倍 | 电信联通移动推荐",
+        "🇺🇸美国05-0.1倍 | 电信联通移动推荐",
+        "🇺🇸美国06-0.1倍 | 电信联通移动推荐",
+        "🇺🇸美国07-0.1倍 | 电信联通移动推荐",
+        "🇺🇸美国圣何塞01-0.1倍",
+        "🇺🇸美国圣何塞02-0.1倍",
+        "🇺🇸美国圣何塞03-0.1倍",
+        "🇺🇸美国圣何塞04-0.1倍",
+        "🇺🇸美国圣何塞05-0.1倍",
+        "🇺🇸美国圣何塞06-0.1倍",
+        "🇺🇸美国圣何塞07-0.1倍"
+      ]
+    },
+    {
+      "tag": "🇨🇳 国内网站",
+      "type": "selector",
+      "outbounds": [
+        "direct",
+        "🌐 国外代理"
+      ]
+    },
+    {
+      "tag": "direct",
+      "type": "direct"
+    },
+    {
+      "tag": "🇺🇸美国圣何塞01-0.1倍",
+      "type": "vless",
+      "server": "104.18.126.69",
+      "server_port": 443,
+      "uuid": "b305ddfe-46cd-4fa4-8cd1-78ed12372b9d",
+      "tls": {
+        "enabled": true,
+        "server_name": "usa1s.xn--ghqu5fm27b67w.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "usa1s.xn--ghqu5fm27b67w.com"
+        },
+        "path": "/pq/us1"
+      }
+    },
+    {
+      "tag": "🇺🇸美国圣何塞02-0.1倍",
+      "type": "vless",
+      "server": "104.18.126.69",
+      "server_port": 443,
+      "uuid": "b305ddfe-46cd-4fa4-8cd1-78ed12372b9d",
+      "tls": {
+        "enabled": true,
+        "server_name": "usa2.xn--ghqu5fm27b67w.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "usa2.xn--ghqu5fm27b67w.com"
+        },
+        "path": "/pq/us2"
+      }
+    },
+    {
+      "tag": "🇺🇸美国圣何塞03-0.1倍",
+      "type": "vless",
+      "server": "104.18.126.69",
+      "server_port": 443,
+      "uuid": "b305ddfe-46cd-4fa4-8cd1-78ed12372b9d",
+      "tls": {
+        "enabled": true,
+        "server_name": "usa3.xn--ghqu5fm27b67w.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "usa3.xn--ghqu5fm27b67w.com"
+        },
+        "path": "/pq/us3"
+      }
+    },
+    {
+      "tag": "🇺🇸美国圣何塞04-0.1倍",
+      "type": "vless",
+      "server": "104.18.126.69",
+      "server_port": 443,
+      "uuid": "b305ddfe-46cd-4fa4-8cd1-78ed12372b9d",
+      "tls": {
+        "enabled": true,
+        "server_name": "usa4.xn--ghqu5fm27b67w.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "usa4.xn--ghqu5fm27b67w.com"
+        },
+        "path": "/pq/us4"
+      }
+    },
+    {
+      "tag": "🇺🇸美国圣何塞05-0.1倍",
+      "type": "vless",
+      "server": "104.18.126.69",
+      "server_port": 443,
+      "uuid": "b305ddfe-46cd-4fa4-8cd1-78ed12372b9d",
+      "tls": {
+        "enabled": true,
+        "server_name": "usa5.xn--ghqu5fm27b67w.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "usa5.xn--ghqu5fm27b67w.com"
+        },
+        "path": "/pq/us5"
+      }
+    },
+    {
+      "tag": "🇺🇸美国圣何塞06-0.1倍",
+      "type": "vless",
+      "server": "104.18.126.69",
+      "server_port": 443,
+      "uuid": "b305ddfe-46cd-4fa4-8cd1-78ed12372b9d",
+      "tls": {
+        "enabled": true,
+        "server_name": "usa6.xn--ghqu5fm27b67w.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "usa6.xn--ghqu5fm27b67w.com"
+        },
+        "path": "/pq/us6"
+      }
+    },
+    {
+      "tag": "🇺🇸美国圣何塞07-0.1倍",
+      "type": "vless",
+      "server": "104.18.126.69",
+      "server_port": 443,
+      "uuid": "b305ddfe-46cd-4fa4-8cd1-78ed12372b9d",
+      "tls": {
+        "enabled": true,
+        "server_name": "usa7.xn--ghqu5fm27b67w.com",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "transport": {
+        "type": "ws",
+        "headers": {
+          "Host": "usa7.xn--ghqu5fm27b67w.com"
+        },
+        "path": "/pq/us7"
+      }
+    },
+    {
+      "tag": "🇺🇸美国01-0.1倍 | 电信联通移动推荐",
+      "type": "hysteria2",
+      "server": "pq.us1.globals-download.com",
+      "server_port": 443,
+      "password": "b305ddfe-46cd-4fa4-8cd1-78ed12372b9d",
+      "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "insecure": true
+      }
+    },
+    {
+      "tag": "🇺🇸美国02-0.1倍 | 电信联通移动推荐",
+      "type": "hysteria2",
+      "server": "pq.us2.globals-download.com",
+      "server_port": 443,
+      "password": "b305ddfe-46cd-4fa4-8cd1-78ed12372b9d",
+      "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "insecure": true
+      }
+    },
+    {
+      "tag": "🇺🇸美国03-0.1倍 | 电信联通移动推荐",
+      "type": "hysteria2",
+      "server": "pq.us3.globals-download.com",
+      "server_port": 443,
+      "password": "b305ddfe-46cd-4fa4-8cd1-78ed12372b9d",
+      "tls": {
+        "enabled": true,
+        "server_name": "tv.apple.com",
+        "insecure": true
+      }
+    },
+    {
+      "tag": "🇺🇸美国04-0.1倍 | 电信联通移动推荐",
+      "type": "hysteria2",
+      "server": "pq.us4.globals-download.com",
+      "server_port": 443,
+      "password": "b305ddfe-46cd-4fa4-8cd1-78ed12372b9d",
+      "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "insecure": true
+      }
+    },
+    {
+      "tag": "🇺🇸美国05-0.1倍 | 电信联通移动推荐",
+      "type": "hysteria2",
+      "server": "pq.us5.globals-download.com",
+      "server_port": 443,
+      "password": "b305ddfe-46cd-4fa4-8cd1-78ed12372b9d",
+      "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "insecure": true
+      }
+    },
+    {
+      "tag": "🇺🇸美国06-0.1倍 | 电信联通移动推荐",
+      "type": "hysteria2",
+      "server": "pq.us6.globals-download.com",
+      "server_port": 443,
+      "password": "b305ddfe-46cd-4fa4-8cd1-78ed12372b9d",
+      "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "insecure": true
+      }
+    },
+    {
+      "tag": "🇺🇸美国07-0.1倍 | 电信联通移动推荐",
+      "type": "hysteria2",
+      "server": "pq.us7.globals-download.com",
+      "server_port": 443,
+      "password": "b305ddfe-46cd-4fa4-8cd1-78ed12372b9d",
+      "tls": {
+        "enabled": true,
+        "server_name": "www.apple.com",
+        "insecure": true
+      }
+    }
+  ],
+  "route": {
+    "default_domain_resolver": {
+      "server": "ali"
+    },
+    "rules": [
+      {
+        "action": "sniff",
+        "sniffer": [
+          "http",
+          "tls",
+          "quic",
+          "dns"
+        ],
+        "timeout": "500ms"
+      },
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "port": 53
+          },
+          {
+            "protocol": "dns"
+          }
+        ],
+        "action": "hijack-dns"
+      },
+      {
+        "ip_is_private": true,
+        "action": "route",
+        "outbound": "direct"
+      },
+      {
+        "package_name": [
+          "com.google.android.googlequicksearchbox"
+        ],
+        "action": "route",
+        "outbound": "🇺🇸 美国节点"
+      },
+      {
+        "rule_set": [
+          "openai_domain"
+        ],
+        "action": "route",
+        "outbound": "🇺🇸 美国节点"
+      },
+      {
+        "domain_suffix": [
+          "claude.ai",
+          "anthropic.com",
+          "api.anthropic.com",
+          "statsig.anthropic.com"
+        ],
+        "action": "route",
+        "outbound": "🇺🇸 美国节点"
+      },
+      {
+        "rule_set": [
+          "proxy_domain"
+        ],
+        "action": "route",
+        "outbound": "🌐 国外代理"
+      },
+      {
+        "rule_set": [
+          "cn_ip",
+          "cn_domain"
+        ],
+        "action": "route",
+        "outbound": "🇨🇳 国内网站"
+      }
+    ],
+    "rule_set": [
+      {
+        "tag": "cn_ip",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geoip/cn.srs",
+        "download_detour": "direct"
+      },
+      {
+        "tag": "cn_domain",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo-lite/geosite/cn.srs",
+        "download_detour": "direct"
+      },
+      {
+        "tag": "openai_domain",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/openai.srs",
+        "download_detour": "direct"
+      },
+      {
+        "tag": "proxy_domain",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/geolocation-!cn.srs",
+        "download_detour": "direct"
+      }
+    ],
+    "final": "🌐 国外代理",
+    "auto_detect_interface": true
+  },
+  "experimental": {
+    "clash_api": {
+      "external_controller": "0.0.0.0:9090",
+      "external_ui": "zashboard"
+    },
+    "cache_file": {
+      "enabled": true,
+      "path": "/data/adb/box/sing-box/cache.db",
+      "store_fakeip": true,
+      "store_rdrc": true
+    }
+  }
+}
