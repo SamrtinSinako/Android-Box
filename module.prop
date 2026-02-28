@@ -1,6 +1,6 @@
 id=box_for_root
 name=Android Box
-version=Box
+version=box
 versionCode=20260228
 author=SamrtinSinale
 description=📦 Box for Root - 为Android设备提供透明代理工具箱 🚀 支持clash、sing-box、v2ray、hysteria和xray等多种代理工具

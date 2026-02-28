@@ -1,6 +1,6 @@
 {
-  "version": "Box",
+  "version": "box",
   "versionCode": "20260228",
-  "zipUrl": "https://github.com/boxproxy/box/releases/download/Box/box-Box.zip",
+  "zipUrl": "https://github.com/boxproxy/box/releases/download/box/box-box.zip",
   "changelog": "https://github.com/boxproxy/box/raw/master/CHANGELOG.md"
 }
