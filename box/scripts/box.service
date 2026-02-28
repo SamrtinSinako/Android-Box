@@ -806,6 +806,12 @@ start_box() {
   box_check_bin
   box_check_logs
 
+  # 清除 fakeip 缓存，避免重启后出现 999.0.0.1 问题
+  if [ "${bin_name}" = "sing-box" ]; then
+    rm -f "/data/adb/box/sing-box/cache.db"
+    log Info "已清除 sing-box fakeip 缓存"
+  fi
+
   # 如果 run_crontab 不等于 "false" 则执行 box_run_crontab
   [ "${run_crontab}" = "true" ] && box_run_crontab || log Info "定时任务已禁用"
 
