@@ -1,7 +1,7 @@
 {
   "log": {
     "disabled": false,
-    "level": "error",
+    "level": "fatal",
     "timestamp": true,
     "output": "/data/adb/box/run/sing-box.log"
   },
@@ -28,6 +28,7 @@
     "rules": [
       {
         "rule_set": "cn_domain",
+        "action": "route",
         "server": "ali"
       },
       {
@@ -35,6 +36,7 @@
           "A",
           "AAAA"
         ],
+        "action": "route",
         "server": "fakeip",
         "rewrite_ttl": 1
       }
@@ -78,21 +80,22 @@
     {
       "tag": "🇺🇸 美国节点",
       "type": "selector",
+      "default": "🇺🇸美国01-0.1倍 | 电信联通移动推荐",
       "outbounds": [
-        "🇺🇸美国圣何塞01-0.1倍",
-        "🇺🇸美国圣何塞02-0.1倍",
-        "🇺🇸美国圣何塞03-0.1倍",
-        "🇺🇸美国圣何塞04-0.1倍",
-        "🇺🇸美国圣何塞05-0.1倍",
-        "🇺🇸美国圣何塞06-0.1倍",
-        "🇺🇸美国圣何塞07-0.1倍",
         "🇺🇸美国01-0.1倍 | 电信联通移动推荐",
         "🇺🇸美国02-0.1倍 | 电信联通移动推荐",
         "🇺🇸美国03-0.1倍 | 电信联通移动推荐",
         "🇺🇸美国04-0.1倍 | 电信联通移动推荐",
         "🇺🇸美国05-0.1倍 | 电信联通移动推荐",
         "🇺🇸美国06-0.1倍 | 电信联通移动推荐",
-        "🇺🇸美国07-0.1倍 | 电信联通移动推荐"
+        "🇺🇸美国07-0.1倍 | 电信联通移动推荐",
+        "🇺🇸美国圣何塞01-0.1倍",
+        "🇺🇸美国圣何塞02-0.1倍",
+        "🇺🇸美国圣何塞03-0.1倍",
+        "🇺🇸美国圣何塞04-0.1倍",
+        "🇺🇸美国圣何塞05-0.1倍",
+        "🇺🇸美国圣何塞06-0.1倍",
+        "🇺🇸美国圣何塞07-0.1倍"
       ]
     },
     {
@@ -380,13 +383,6 @@
         "outbound": "direct"
       },
       {
-        "rule_set": [
-          "googlefcm_domain"
-        ],
-        "action": "route",
-        "outbound": "direct"
-      },
-      {
         "package_name": [
           "com.google.android.googlequicksearchbox"
         ],
@@ -401,9 +397,17 @@
         "outbound": "🇺🇸 美国节点"
       },
       {
+        "domain_suffix": [
+          "claude.ai",
+          "anthropic.com",
+          "api.anthropic.com",
+          "statsig.anthropic.com"
+        ],
+        "action": "route",
+        "outbound": "🇺🇸 美国节点"
+      },
+      {
         "rule_set": [
-          "google_ip",
-          "google_domain",
           "proxy_domain"
         ],
         "action": "route",
@@ -420,68 +424,47 @@
     ],
     "rule_set": [
       {
-        "tag": "googlefcm_domain",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/googlefcm.srs",
-        "download_detour": "🌐 国外代理"
-      },
-      {
         "tag": "cn_ip",
         "type": "remote",
         "format": "binary",
         "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geoip/cn.srs",
-        "download_detour": "🌐 国外代理"
+        "download_detour": "direct"
       },
       {
         "tag": "cn_domain",
         "type": "remote",
         "format": "binary",
         "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo-lite/geosite/cn.srs",
-        "download_detour": "🌐 国外代理"
-      },
-      {
-        "tag": "google_ip",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo-lite/geoip/google.srs",
-        "download_detour": "🌐 国外代理"
-      },
-      {
-        "tag": "google_domain",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo-lite/geosite/google.srs",
-        "download_detour": "🌐 国外代理"
+        "download_detour": "direct"
       },
       {
         "tag": "openai_domain",
         "type": "remote",
         "format": "binary",
         "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/openai.srs",
-        "download_detour": "🌐 国外代理"
+        "download_detour": "direct"
       },
       {
         "tag": "proxy_domain",
         "type": "remote",
         "format": "binary",
         "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/geolocation-!cn.srs",
-        "download_detour": "🌐 国外代理"
+        "download_detour": "direct"
       }
     ],
     "final": "🌐 国外代理",
     "auto_detect_interface": true
   },
   "experimental": {
-    "cache_file": {
-      "enabled": true,
-      "path": "cache.db",
-      "store_fakeip": true,
-      "store_rdrc": true
-    },
     "clash_api": {
       "external_controller": "0.0.0.0:9090",
       "external_ui": "zashboard"
+    },
+    "cache_file": {
+      "enabled": true,
+      "path": "/data/adb/box/sing-box/cache.db",
+      "store_fakeip": true,
+      "store_rdrc": true
     }
   }
 }
