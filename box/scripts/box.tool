@@ -1286,45 +1286,41 @@ cgroup_cpuset() {
 }
 
 webroot() {
-  ip_port=$(if [ "${bin_name}" = "mihomo" ]; then busybox awk '/external-controller:/ {print $2}' "${mihomo_config}"; else busybox awk -F'[:,]' '/"external_controller"/ {print $2":"$3}' "${sing_config}" | sed 's/^[ \t]*//;s/"//g'; fi;)
-  secret=$(if [ "${bin_name}" = "mihomo" ]; then busybox awk '/^secret:/ {print $2}' "${mihomo_config}" | sed 's/"//g'; else busybox awk -F'"' '/"secret"/ {print $4}' "${sing_config}" | head -n 1; fi;)
   path_webroot="/data/adb/modules/box_for_root/webroot/index.html"
   touch "$path_webroot"
   if [[ "${bin_name}" = @(mihomo|sing-box) ]]; then
-    echo -e '
-  <!DOCTYPE html>
-  <script>
-      document.location = 'http://127.0.0.1:9090/ui/'
-  </script>
-  </html>
-  ' > $path_webroot
-    sed -i "s#document\.location =.*#document.location = 'http://$ip_port/ui/'#" $path_webroot
+    cat > "$path_webroot" <<'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="refresh" content="0; url=https://board.zash.run.place/#/proxies">
+<script>window.location.href="https://board.zash.run.place/#/proxies";</script>
+</head>
+<body>正在跳转到 Zashboard...</body>
+</html>
+EOF
+    log Info "已生成/更新 WebUI 页面: ${path_webroot} → https://board.zash.run.place/#/proxies (内核: ${bin_name})"
   else
-   echo -e '
-  <!DOCTYPE html>
-  <html lang="zh-CN">
-  <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>不支持WebUI</title>
-      <style>
-          body {
-              font-family: Arial, sans-serif;
-              text-align: center;
-              padding: 50px;
-          }
-          h1 {
-              color: red;
-          }
-      </style>
-  </head>
-  <body>
-      <h1>不支持WebUI</h1>
-      <p>抱歉，xray/v2ray 不支持所需的WebUI功能。</p>
-  </body>
-  </html>' > $path_webroot
+    cat > "$path_webroot" <<'EOF'
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>不支持WebUI</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+        h1 { color: red; }
+    </style>
+</head>
+<body>
+    <h1>不支持WebUI</h1>
+    <p>抱歉，xray/v2ray 不支持所需的WebUI功能。</p>
+</body>
+</html>
+EOF
+    log Info "已生成/更新 WebUI 页面: ${path_webroot} (内核: ${bin_name} 不支持WebUI)"
   fi
-  log Info "已生成/更新 WebUI 页面: ${path_webroot} → http://${ip_port}/ui/ (内核: ${bin_name})"
 }
 
 bond0() {
