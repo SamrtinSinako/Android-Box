@@ -1,6 +1,6 @@
 {
-  "version": "Android Box",
+  "version": "Box",
   "versionCode": "20260228",
-  "zipUrl": "https://github.com/boxproxy/box/releases/download/Android Box/box-Android Box.zip",
+  "zipUrl": "https://github.com/boxproxy/box/releases/download/Box/box-Box.zip",
   "changelog": "https://github.com/boxproxy/box/raw/master/CHANGELOG.md"
 }
