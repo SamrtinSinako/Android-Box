@@ -1,0 +1,7 @@
+id=box_for_root
+name=SingBox Pure
+version=SingBox1.3-Pure
+versionCode=20260301
+author=SamrtinSinale
+description=📦 SingBox Pure - 专为 sing-box 优化的透明代理工具箱，移除了其他内核支持，更精简高效 🚀
+updateJson=https://github.com/boxproxy/box/raw/master/update.json

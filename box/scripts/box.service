@@ -1,0 +1,523 @@
+#!/system/bin/sh
+
+scripts_dir="${0%/*}"
+source /data/adb/box/settings.ini
+
+PROPFILE="/data/adb/modules/box_for_root/module.prop"
+
+find_packages_uid() {
+  log Info "代理模式: ${proxy_mode}"
+
+  if [ "${proxy_mode}" = "core" ]; then
+    log Info "核心模式已启用，跳过 package 和 gid 处理"
+    > "${uid_list}"
+    return 0
+  fi
+
+  log Info "开始处理 UID/GID 列表"
+  > "${uid_list}"
+
+  for entry in "${packages_list[@]}"; do
+    prefix="${entry%%:*}"
+    package="${entry#*:}"
+    local base_uid
+    base_uid=$(busybox awk -v p="^${package}$" '$1 ~ p {print $2; exit}' "${system_packages_file}")
+    if [ -n "${base_uid}" ]; then
+      local multiuser_uid=$((base_uid + prefix * 100000))
+      echo "${multiuser_uid}" >> "${uid_list}"
+      log Info "Success: 用户 \"${prefix}\" 应用: \"${package}\" -> ${multiuser_uid}"
+    else
+      log Warning "Failure: 用户 \"${prefix}\" 应用: \"${package}\" -> 未找到"
+    fi
+  done
+
+  if [ ${#gid_list[@]} -gt 0 ]; then
+    printf "%s\n" "${gid_list[@]}" >> "${uid_list}"
+    log Info "Success: GID: ${gid_list[*]} -> 已添加"
+  fi
+
+  if [ -s "${uid_list}" ]; then
+    local temp_uid_list="${box_run}/temp_uid.list"
+    busybox sort -un "${uid_list}" > "${temp_uid_list}"
+    mv "${temp_uid_list}" "${uid_list}"
+  fi
+}
+
+log_service_results() {
+  local proxy_mode_type="$1"
+  local uids="$2"
+  log Info "操作: 更新 TUN 模式 UID 列表"
+  log Info "模式: ${proxy_mode_type}"
+  if [ "${proxy_mode_type}" = "core" ]; then
+    log Info "(核心模式，所有应用透明代理)"
+  elif [ -n "$uids" ]; then
+    log Info "应用的 UIDs: ${uids}"
+  else
+    log Info "(无)"
+  fi
+}
+
+box_check_logs() {
+  log Info "删除并备份日志文件"
+  (
+    if [ -f "${box_run}/sing-box.log" ]; then
+      mv "${box_run}/sing-box.log" "${box_run}/sing-box.old.log"
+    fi
+    find "${box_run}" -maxdepth 1 -type f \( -name "root" -o \( -name "*.list" -a ! -name "appuid.list" \) -o -name "*.inotify.log" \) -exec rm -f {} +
+    find "${box_run}" -maxdepth 1 -type f \( -name "*.log" -o -name "*.old.log" \) -mtime +1 -exec rm -f {} +
+  ) &
+}
+
+box_bin_alive() {
+  local PID=$(<"${box_pid}" 2>/dev/null)
+  if ! kill -0 "$PID" >/dev/null 2>&1; then
+    log Error "$(<"${box_run}/sing-box.log")"
+    log Error "sing-box 服务未运行。"
+    log Error "请检查 sing-box.log 获取详细信息。"
+    log Error "清理无效 pid $PID"
+    killall -15 "sing-box" >/dev/null 2>&1 || busybox pkill -15 "sing-box" >/dev/null 2>&1
+    "${scripts_dir}/box.iptables" disable >/dev/null 2>&1
+    [ -f "${box_pid}" ] && rm -f "${box_pid}"
+    exit 1
+  else
+    return 0
+  fi
+}
+
+box_run_crontab() {
+  pkill -f "busybox crond" >/dev/null 2>&1
+  busybox crontab -c "${box_run}" -r
+  echo "# root 的定时任务" > "${box_run}/root"
+
+  if [ "${run_crontab}" = "true" ]; then
+    log Info "crond 已启用"
+    if [ "$update_subscription" = "true" ] || [ "$update_geo" = "true" ]; then
+      log Info "定时任务间隔: ${interva_update}"
+      echo "${interva_update} ${scripts_dir}/box.tool geosub" >> "${box_run}/root"
+    fi
+    cat "${box_dir}/crontab.cfg" >> "${box_run}/root" 2>/dev/null || true
+    chmod 0644 "${box_run}/root"
+    nohup busybox crond -c "${box_run}" >/dev/null 2>&1 &
+  else
+    log Info "crond 已禁用"
+  fi
+}
+
+box_ownership() {
+  chown -R "${box_user_group}" "${box_dir}"
+  chmod -R 644 "${box_dir}/sing-box"
+  chown "${box_user_group}" "${bin_path}"
+  chmod 6755 "${bin_path}"
+  [ -f "${box_dir}/bin/yq" ] && chmod 0700 "${box_dir}/bin/yq"
+  [ -f "${box_dir}/bin/curl" ] && chmod 0700 "${box_dir}/bin/curl"
+}
+
+box_permission() {
+  if [[ "${box_user_group}" == @(root:net_admin|0:3005) && -f "${bin_path}" ]]; then
+    box_ownership
+    log Info "使用内核 ${bin_path}"
+  else
+    if [[ "${box_user_group}" != @(root:net_admin|0:3005) ]]; then
+      log Error "不支持的用户组 [ \"${box_user_group}\" ]"
+      sed -i "s/box_user_group=.*/box_user_group=\"root:net_admin\"/g" "${box_dir}/settings.ini"
+      log Info "已自动切换为 [ root:net_admin ]，请重启"
+      exit 1
+    fi
+    log Error "未检测到内核 [ sing-box ]"
+    log Error "请将 sing-box 二进制文件放到 \"${bin_dir}/\" 目录下"
+    set_description error "内核不存在"
+    exit 1
+  fi
+}
+
+box_check_bin() {
+  if [ ! -x "${bin_path}" ]; then
+    log Error "${bin_path} 不可执行"
+    set_description error "内核不可执行"
+    exit 1
+  fi
+  local version_output
+  version_output=$("${bin_path}" version 2>/dev/null) || {
+    log Error "sing-box 版本信息获取失败"
+    set_description error "内核损坏"
+    exit 1
+  }
+  log Info "${version_output}"
+}
+
+prepare_singbox() {
+  if ! [ -f "${sing_config}" ]; then
+    log Error "未找到配置文件 ${sing_config}"
+    set_description error "配置文件不存在"
+    exit 1
+  else
+    log Info "检测到配置 ${sing_config}"
+  fi
+
+  # 检查 yq
+  yq="yq"
+  if ! command -v yq >/dev/null 2>&1; then
+    if [ ! -x "${box_dir}/bin/yq" ]; then
+      log Info "未找到 yq，开始从 GitHub 下载"
+      "${scripts_dir}/box.tool" upyq
+    fi
+    yq="${box_dir}/bin/yq"
+  fi
+
+  # 设置 auto_detect_interface / auto_route
+  ${yq} '.route.auto_detect_interface = true' -i --output-format=json "${sing_config}"
+  ${yq} '(.inbounds[] | select(.type == "tun") | .auto_route) |= true' -i --output-format=json "${sing_config}"
+
+  # 确保日志路径是绝对路径
+  ${yq} '.log.output = "'"${box_run}/sing-box.log"'"' -i --output-format=json "${sing_config}" 2>/dev/null || true
+
+  # 检查 sing-box 配置
+  if ( cd "$(dirname "${sing_config}")" && "${bin_path}" check -c "$(basename "${sing_config}")" ) > "${box_run}/sing-box.log" 2>&1; then
+
+    # 根据 network_mode 设置入站
+    if [[ "${network_mode}" == @(mixed|tun) ]]; then
+      if ! busybox grep -q '"type": "tun"' "${sing_config}"; then
+        ${yq} '.inbounds += [{
+          "type": "tun",
+          "tag": "tun-in",
+          "interface_name": "sing",
+          "address": ["172.18.0.1/30","fdfe:dcba:9876::1/126"],
+          "mtu": 9000,
+          "stack": "mixed",
+          "auto_route": true,
+          "strict_route": true,
+          "auto_redirect": true,
+          "include_android_user": [0,10,999],
+          "include_uid": [],
+          "exclude_uid": []
+        }]' -i --output-format=json "${sing_config}"
+        log Info "已为 ${sing_config} 添加 [Tun] 配置"
+      fi
+    else
+      # 非 tun 模式：添加 tproxy 入站，移除 tun
+      if ! busybox grep -q '"type": "tproxy"' "${sing_config}"; then
+        ${yq} '.inbounds += [{"type": "tproxy", "tag": "tproxy-in", "listen": "::", "listen_port": '"${tproxy_port}"'}]' -i --output-format=json "${sing_config}"
+        log Info "已为 ${sing_config} 添加 [Tproxy] 配置"
+      fi
+      ${yq} 'del(.inbounds[] | select(.type == "tun"))' -i --output-format=json "${sing_config}"
+
+      if busybox grep -q '"type": "tproxy"' "${sing_config}"; then
+        ${yq} '(.inbounds[] | select(.type == "tproxy") | .listen_port) = '"${tproxy_port}" -i --output-format=json "${sing_config}"
+      fi
+    fi
+
+    # TUN 模式下处理 UID
+    if [[ "${network_mode}" == @(mixed|tun) ]]; then
+      if [ "${proxy_mode}" = "core" ]; then
+        yq_filter='(.inbounds[] | select(.type == "tun") | .include_uid) = [] |
+                   (.inbounds[] | select(.type == "tun") | .exclude_uid) = []'
+        "${yq}" eval "$yq_filter" -i --output-format=json "${sing_config}" > /dev/null 2>&1
+        log_service_results "core" ""
+      else
+        yq_filter='(.inbounds[] | select(.type == "tun") | .include_uid) = [] |
+                   (.inbounds[] | select(.type == "tun") | .exclude_uid) = []'
+        [[ ${proxy_mode} = "blacklist" || ${proxy_mode} = "black" ]] && mode="exclude" || mode="include"
+        local uids_to_add=""
+        if [ -s "${uid_list}" ]; then
+          uids_to_add=$(busybox tr '\n' ',' < "${uid_list}" | sed 's/,$//')
+          if [ -n "$uids_to_add" ]; then
+            yq_filter="$yq_filter | (.inbounds[] | select(.type == \"tun\") | .${mode}_uid) = [${uids_to_add}]"
+          fi
+        fi
+        "${yq}" eval "$yq_filter" -i --output-format=json "${sing_config}" > /dev/null 2>&1
+        log_service_results "$mode" "$uids_to_add"
+      fi
+    fi
+
+    # redirect 入站
+    if [[ "${network_mode}" == @(mixed|enhance|redirect) ]]; then
+      if ! busybox grep -q '"type": "redirect"' "${sing_config}"; then
+        ${yq} '.inbounds += [{
+          "type": "redirect",
+          "tag": "redirect-in",
+          "listen": "::",
+          "listen_port": '"${redir_port}"'
+        }]' -i --output-format=json "${sing_config}"
+        log Info "已为 ${sing_config} 添加 [Redirect] 配置"
+      fi
+      if busybox grep -q '"type": "redirect"' "${sing_config}"; then
+        ${yq} '(.inbounds[] | select(.type == "redirect") | .listen_port) = '"${redir_port}" -i --output-format=json "${sing_config}"
+      fi
+    fi
+
+  else
+    log Error "$(<"${box_run}/sing-box.log")"
+    log Error "配置失败，请检查 ${box_run}/sing-box.log 文件"
+    set_description error
+    exit 1
+  fi
+}
+
+box_run_bin() {
+  log Info "启动 sing-box 服务"
+  ulimit -SHn 1000000
+  : > "/data/adb/box/run/tool.log"
+
+  if [ "${auto_modify_config}" = "true" ]; then
+    prepare_singbox
+  fi
+
+  if "${bin_path}" check -c "${sing_config}" -D "${box_dir}/sing-box" > "${box_run}/sing-box.log" 2>&1; then
+    nohup busybox setuidgid "${box_user_group}" "${bin_path}" run -c "${sing_config}" -D "${box_dir}/sing-box" > "${bin_log}" 2>&1 &
+    PID=$!
+    echo -n $PID > "${box_pid}"
+  else
+    set_description error
+    log Error "$(<"${box_run}/sing-box.log")"
+    log Error "配置失败，请检查 ${box_run}/sing-box.log 文件"
+    exit 1
+  fi
+}
+
+box_cgroup() {
+  set_cgroup_config() {
+    local cgroup_attr="$1"
+    local cgroup_value="$2"
+    if [ "${cgroup_value}" = "true" ]; then
+      if "${scripts_dir}/box.tool" "${cgroup_attr}"; then
+        true
+      else
+        log Warning "无法为 sing-box 启用 ${cgroup_attr}"
+        sed -i -E "/cgroup_${cgroup_attr}/ s/(true)/false/" "${box_dir}/settings.ini"
+      fi
+    fi
+  }
+  set_cgroup_config "memcg" "${cgroup_memcg}"
+  set_cgroup_config "cpuset" "${cgroup_cpuset}"
+  set_cgroup_config "blkio" "${cgroup_blkio}"
+}
+
+box_bin_status() {
+  local PID=$(busybox pidof sing-box)
+  if [ -z "$PID" ]; then
+    log Error "sing-box 未在运行"
+    return 1
+  fi
+
+  local stack
+  stack=$(find "/data/adb/box/sing-box" -type f -name "*.json" -exec busybox awk -F'"' '/\"stack\"/{print $4}' {} +)
+  log Info "sing-box 服务正在运行"
+  log Info "代理模式: ${proxy_mode} + 网络模式: ${network_mode}"
+
+  rss=$(grep VmRSS /proc/$PID/status | busybox awk '{ print $2 }')
+  [ "${rss}" -ge 1024 ] && bin_rss="$(expr ${rss} / 1024) MB" || bin_rss="${rss} KB"
+  swap=$(grep VmSwap /proc/$PID/status | busybox awk '{ print $2 }')
+  [ "${swap}" -ge 1024 ] && bin_swap="$(expr ${swap} / 1024) MB" || bin_swap="${swap} KB"
+
+  user_group=$(stat -c %U:%G /proc/$PID)
+  log Info "sing-box 以 '${user_group}' 用户组启动"
+  log Info "sing-box 状态: 运行中 (PID: $PID)"
+  log Info "sing-box 内存占用: ${bin_rss}, 交换: ${bin_swap}"
+
+  cpu=$(ps -p $PID -o %cpu | busybox awk 'NR==2{print $1}' 2>/dev/null)
+  cpus_allowed=$(grep Cpus_allowed_list /proc/$PID/status | busybox awk '{ print $2" "$3 }')
+  core=$(busybox awk '{print $39}' /proc/$PID/stat 2>/dev/null)
+  [ -n "${cpu}" ] && log Info "sing-box CPU 使用率: ${cpu}%" || log Info "sing-box CPU 使用率: 无法获取"
+  [ -n "${cpus_allowed}" ] && log Info "sing-box 允许使用的 CPU 核心: ${cpus_allowed}" || true
+
+  temperature_celsius=$(($(cat /sys/class/power_supply/battery/temp 2>/dev/null || echo 0) / 10))
+  log Info "电池温度: ${temperature_celsius}°C"
+
+  running_time=$(busybox ps -o comm,etime | grep sing-box | busybox awk '{print $2}')
+  [ -n "${running_time}" ] && log Info "sing-box 运行时间: ${running_time}" || true
+
+  (
+    localIP=($(ip -4 a | awk '/inet / && !/127.0.0.1/ { split($2, a, "/"); print a[1] }'))
+    log Info "本地 IP: ${localIP[*]}"
+  ) &
+
+  if [ -n "$PID" ]; then
+    get_dns_mode
+    set_description running
+    echo -n "$PID" > "${box_pid}"
+  fi
+}
+
+set_description() {
+  local status="$1"
+  local error_msg="$2"
+  local desc=""
+
+  local ipv6_info
+  [ "${ipv6}" = "true" ] && ipv6_info="已启用" || ipv6_info="未启用"
+
+  case "$status" in
+    running)
+      desc="✅ SingBox 运行中 | 代理: ${proxy_mode} | 网络: ${network_mode} | IPv6: ${ipv6_info} | DNS: ${dns_mode}"
+      ;;
+    stopped)
+      desc="❌ SingBox 已停止 | 代理已禁用"
+      ;;
+    idle)
+      desc="✨ SingBox 模块已加载，等待服务启动"
+      ;;
+    error)
+      local current_time
+      current_time=$(date "+%Y-%m-%d %H:%M:%S")
+      [ -z "${error_msg}" ] && error_msg="配置错误"
+      desc="⚠️ SingBox ${error_msg} | 时间: ${current_time} | 详情见日志: ${box_run}/sing-box.log"
+      ;;
+    *)
+      desc="💤 SingBox 状态未知"
+      ;;
+  esac
+
+  local escaped_desc
+  escaped_desc=$(echo "${desc}" | sed -e 's/[&|#]/\\&/g')
+  sed -Ei "s#^description=.*#description=${escaped_desc}#g" "$PROPFILE"
+}
+
+get_dns_mode() {
+  dns_mode="未知"
+  if grep -q '"type" *: *"fakeip"' "${sing_config}" 2>/dev/null; then
+    dns_mode="fake-ip"
+  else
+    dns_mode="redir-host"
+  fi
+  export dns_mode
+}
+
+start_box() {
+  find_packages_uid
+  get_dns_mode
+  set_description running
+
+  echo -n "" > "${box_log}"
+  box_version=$(busybox awk '!/^ *#/ && /version=/ { print $0 }' "/data/adb/modules/box_for_root/module.prop" 2>/dev/null)
+
+  if [ -t 1 ]; then
+    echo -e "\033[1;33m$(getprop persist.sys.timezone) $(date)\033[0m"
+    echo -e "\033[1;33m${box_version}($(getprop ro.product.cpu.abi))\033[0m"
+    echo -e "\033[1;37m━━━━━━━━━━━━━━━━━━\033[0m"
+  else
+    {
+      echo "$(getprop persist.sys.timezone) $(date)"
+      echo "${box_version}($(getprop ro.product.cpu.abi))"
+      echo "━━━━━━━━━━━━━━━━━━"
+    } | tee -a "${box_log}" >/dev/null 2>&1
+  fi
+
+  # 若 sing-box 仍在运行则先停止
+  if busybox pidof "sing-box" >/dev/null; then
+    log Info "sing-box 仍在运行，自动重启"
+    stop_box
+    start_box && "${scripts_dir}/box.iptables" renew
+    exit 1
+  fi
+
+  log Info "启动服务"
+
+  busybox_code=$(busybox | busybox grep -oE '[0-9.]*' | head -n 1)
+  log Info "当前 $(which busybox) v${busybox_code}"
+
+  box_permission
+  box_check_bin
+  box_check_logs
+
+  # 清除 fakeip 缓存
+  rm -f "/data/adb/box/sing-box/cache.db"
+  log Info "已清除 sing-box fakeip 缓存"
+
+  [ "${run_crontab}" = "true" ] && box_run_crontab || log Info "定时任务已禁用"
+
+  if [ -z "${proxy_mode}" ]; then
+    [ -z "$(busybox awk '!/^ *#/ && /mode:/{print $0}' "${pkg_config}")" ] && printf "\nmode:white" >> "${pkg_config}"
+  fi
+
+  box_run_bin
+  box_cgroup
+
+  count=0
+  while [ $count -le 5 ]; do
+    box_bin_alive || break
+    count=$((count + 1))
+  done
+
+  true
+}
+
+stop_box() {
+  stop_cron
+  if busybox pgrep "sing-box" >/dev/null; then
+    busybox pkill -15 "sing-box" >/dev/null 2>&1 || killall -15 "sing-box" >/dev/null 2>&1
+  fi
+
+  if ! busybox pidof "sing-box" >/dev/null; then
+    [ -f "${box_pid}" ] && rm -f "${box_pid}"
+    log Warning "sing-box 已关闭，服务已停止"
+  else
+    log Warning "sing-box 未完全停止，尝试强制关闭"
+    force_stop
+  fi
+
+  set_description stopped
+}
+
+stop_cron() {
+  if ! busybox pkill -f "busybox crond" >/dev/null 2>&1; then
+    cronkill=$(busybox pgrep -f "crond -c ${box_run}")
+    for cron in ${cronkill}; do
+      kill -15 "${cron}" >/dev/null 2>&1
+    done
+  fi
+}
+
+force_stop() {
+  local PID
+  PID=$(cat "${box_pid}" 2>/dev/null)
+  if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
+    kill -9 "$PID" >/dev/null 2>&1
+  else
+    busybox pkill -9 "sing-box" >/dev/null 2>&1
+  fi
+  ! busybox pgrep -f "sing-box" >/dev/null 2>&1 && rm -f "${box_pid}"
+}
+
+if ! command -v busybox &> /dev/null; then
+  log Error "busybox 命令未找到"
+  exit 1
+fi
+
+case "$1" in
+  start)
+    stop_box >/dev/null 2>&1
+    if start_box; then
+      "${scripts_dir}/box.tool" webroot >/dev/null 2>&1
+    fi
+    ;;
+  stop)
+    stop_box
+    ;;
+  restart)
+    "${scripts_dir}/box.iptables" disable && stop_box
+    if start_box; then
+      "${scripts_dir}/box.iptables" renew
+      "${scripts_dir}/box.tool" webroot >/dev/null 2>&1
+    fi
+    ;;
+  status)
+    if busybox pidof "sing-box" >/dev/null; then
+      echo "\033[1;33m$("${bin_path}" version)\033[0m"
+      box_bin_status
+    else
+      log Warning "sing-box 已关闭，服务已停止"
+    fi
+    ;;
+  cron)
+    run_crontab="true"
+    stop_cron
+    box_run_crontab
+    ;;
+  kcron)
+    stop_cron
+    ;;
+  *)
+    echo "\033[1;31m$0 '$1' 未找到\033[0m" >&2
+    echo "用法: $0 {start|stop|restart|status|cron|kcron}" >&2
+    ;;
+esac
