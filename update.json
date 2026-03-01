@@ -1,6 +1,6 @@
 {
-  "version": "box",
-  "versionCode": "20260228",
-  "zipUrl": "https://github.com/boxproxy/box/releases/download/box/box-box.zip",
+  "version": "ThinBox1.1",
+  "versionCode": "20260301",
+  "zipUrl": "https://github.com/boxproxy/box/releases/download/ThinBox1.1/box-ThinBox1.1.zip",
   "changelog": "https://github.com/boxproxy/box/raw/master/CHANGELOG.md"
 }

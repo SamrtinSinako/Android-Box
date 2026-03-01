@@ -1,3 +1,6 @@
+#### Changelog ThinBox1.1 - 01-03-2026
+- 测试构建
+
 #### Changelog box - 28-02-2026
 - 修复clash
 
