@@ -1,6 +1,9 @@
 name: Build SingBox Pure Module
 
 on:
+  push:
+    branches:
+      - TSox
   workflow_dispatch:
     inputs:
       singbox_version:
@@ -26,8 +29,8 @@ jobs:
       - name: 获取 sing-box 最新版本
         id: singbox
         run: |
-          if [ -n "${{ inputs.singbox_version }}" ]; then
-            VERSION="${{ inputs.singbox_version }}"
+          if [ -n "${{ github.event.inputs.singbox_version }}" ]; then
+            VERSION="${{ github.event.inputs.singbox_version }}"
           else
             VERSION=$(curl -sL https://api.github.com/repos/SagerNet/sing-box/releases/latest | jq -r .tag_name)
           fi
@@ -50,9 +53,10 @@ jobs:
           curl -L "$URL" -o singbox.tar.gz
           tar -xzf singbox.tar.gz
           mkdir -p box/bin
-          mv sing-box-*/sing-box box/bin/sing-box
+          # 兼容不同解压后的文件夹名
+          find . -maxdepth 2 -name "sing-box" -type f -exec mv {} box/bin/sing-box \;
           chmod 755 box/bin/sing-box
-          echo "sing-box 下载完成: $(ls -lh box/bin/sing-box)"
+          echo "sing-box 下载完成"
 
       - name: 下载 yq (arm64)
         run: |
@@ -61,31 +65,7 @@ jobs:
           echo "下载: $URL"
           curl -L "$URL" -o box/bin/yq
           chmod 755 box/bin/yq
-          echo "yq 下载完成: $(ls -lh box/bin/yq)"
-
-      - name: 打包模块
-        id: package
-        run: |
-          SINGBOX_VER=${{ steps.singbox.outputs.version }}
-          ZIP_NAME="SingBox_Pure_${SINGBOX_VER}.zip"
-          zip -r "$ZIP_NAME" \
-            META-INF \
-            box/bin \
-            box/scripts \
-            box/sing-box \
-            box/settings.ini \
-            box/ap.list.cfg \
-            box/package.list.cfg \
-            box/gid.list.cfg \
-            box/crontab.cfg \
-            action.sh \
-            box_service.sh \
-            customize.sh \
-            module.prop \
-            uninstall.sh \
-            webroot
-          echo "zip_name=$ZIP_NAME" >> $GITHUB_OUTPUT
-          echo "打包完成: $(ls -lh $ZIP_NAME)"
+          echo "yq 下载完成"
 
       - name: 更新 module.prop 版本号
         run: |
@@ -94,21 +74,27 @@ jobs:
           sed -i "s/^version=.*/version=SingBox${SINGBOX_VER}-Pure/" module.prop
           sed -i "s/^versionCode=.*/versionCode=${DATE}/" module.prop
 
+      - name: 打包模块
+        id: package
+        run: |
+          SINGBOX_VER=${{ steps.singbox.outputs.version }}
+          ZIP_NAME="SingBox_Pure_${SINGBOX_VER}.zip"
+          # 确保打包包含所有必要文件，排除不需要的 .git 文件夹
+          zip -r "$ZIP_NAME" . -x "*.git*" "*.yml" "singbox.tar.gz"
+          echo "zip_name=$ZIP_NAME" >> $GITHUB_OUTPUT
+          echo "打包完成: $ZIP_NAME"
+
       - name: 发布 Release
-        if: inputs.release == true || inputs.release == 'true'
+        if: github.event.inputs.release == 'true' || github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: SingBox${{ steps.singbox.outputs.version }}
+          tag_name: SingBox${{ steps.singbox.outputs.version }}-${{ github.run_id }}
           name: SingBox Pure ${{ steps.singbox.outputs.version }}
           body: |
             ## SingBox Pure ${{ steps.singbox.outputs.version }}
-
-            ### 内置组件
-            - sing-box `${{ steps.singbox.outputs.version }}`
-            - yq `${{ steps.yq.outputs.version }}`
-
-            ### 安装
-            在 Magisk / KernelSU / APatch 管理器中刷入 zip 文件
+            - 内置 sing-box `${{ steps.singbox.outputs.version }}`
+            - 内置 yq `${{ steps.yq.outputs.version }}`
+            - 构建时间: $(date)
           files: ${{ steps.package.outputs.zip_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
