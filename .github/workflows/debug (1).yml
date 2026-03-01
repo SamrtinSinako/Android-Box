@@ -1,0 +1,208 @@
+name: debug
+
+on:
+  workflow_dispatch:
+  push:
+    paths-ignore:
+      - "README.md"
+      - "CHANGELOG.md"
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4.1.0
+        with:
+          fetch-depth: 0
+
+      - name: Update Module.prop
+        run: |
+          dos2unix module.prop || true
+          
+          VERSION=$(grep -oP 'version=\K[^ ]+' module.prop | tr -d '\r')
+          sed -i "s/$VERSION/$VERSION($(git log --oneline -n 1 | awk '{print $1}'))/g" module.prop
+          sed -i "s/versionCode=.*/versionCode=$(date +%Y%m%d)/g" module.prop
+
+      - name: Get Version
+        id: get_version
+        run: |
+          VERSION=$(grep -oP 'version=\K[^ ]+' module.prop | tr -d '\r')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        
+      - name: Generate Asset
+        run: |
+          sudo mkdir -p /box
+          sudo cp -r --parents $(find ./ -type f ! -path './.git/*' ! -name 'CHANGELOG.md' ! -name 'update.json' ! -name 'build.sh' ! -path './.github/*' ! -path './docs/*' ! -name 'LICENSE')  /box/
+
+      - name: Upload Debug Asset => (box_${{ steps.get_version.outputs.version }})
+        uses: actions/upload-artifact@v4
+        with:
+          name: "box_${{ steps.get_version.outputs.version }}"
+          path: /box/
+
+  prerelease:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs:
+      - build
+    if: success()
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.0
+        with:
+          fetch-depth: 0
+
+      - name: Get Version Info
+        id: get_version
+        run: |
+          VERSION=$(grep -oP 'version=\K[^ ]+' module.prop | tr -d '\r')
+          COMMIT_HASH=$(git log -1 --pretty=format:"%h")
+          COMMIT_DATE=$(git log -1 --pretty=format:"%ad" --date=short)
+          COMMIT_MSG=$(git log -1 --pretty=format:"%B")
+          FULL_VERSION="${VERSION}(${COMMIT_HASH})"
+          ARTIFACT_NAME="box_${FULL_VERSION}"
+          
+          echo "version=$FULL_VERSION" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
+          echo "commit_hash=$COMMIT_HASH" >> "$GITHUB_OUTPUT"
+          echo "commit_date=$COMMIT_DATE" >> "$GITHUB_OUTPUT"
+          
+          {
+            echo 'commit_msg<<EOF'
+            echo "$COMMIT_MSG"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: "${{ steps.get_version.outputs.artifact_name }}"
+          path: ./artifact
+
+      - name: Create ZIP Package
+        run: |
+          cd artifact
+          zip -r "../${{ steps.get_version.outputs.artifact_name }}.zip" .
+          cd ..
+
+      - name: Delete Current Release Assets
+        uses: mknejp/delete-release-assets@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: debug
+          fail-if-no-assets: false
+          fail-if-no-release: false
+          assets: '*'
+
+      - name: Update Tag to Current Commit
+        uses: richardsimko/update-tag@v1
+        with:
+          tag_name: debug
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Prerelease
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: debug
+          name: "Debug Build - ${{ steps.get_version.outputs.version }}"
+          body: |
+            ## 📦 调试构建
+            
+            **版本:** ${{ steps.get_version.outputs.version }}
+            **提交:** ${{ steps.get_version.outputs.commit_hash }}
+            **日期:** ${{ steps.get_version.outputs.commit_date }}
+            
+            ### 提交信息
+            ${{ steps.get_version.outputs.commit_msg }}
+            
+            ---
+            ⚠️ 这是预发布版本，用于测试和调试。
+          files: ${{ steps.get_version.outputs.artifact_name }}.zip
+          prerelease: true
+          draft: false
+
+  telegram-upload:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs:
+      - prerelease
+    if: success()
+    steps:
+      - uses: actions/checkout@v4.1.0
+        with:
+          fetch-depth: 0
+
+      - name: Get Version Info
+        id: get_version
+        run: |
+          VERSION=$(grep -oP 'version=\K[^ ]+' module.prop | tr -d '\r')
+          COMMIT_HASH=$(git log -1 --pretty=format:"%h")
+          COMMIT_DATE=$(git log -1 --pretty=format:"%ad" --date=short)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "commit_hash=$COMMIT_HASH" >> "$GITHUB_OUTPUT"
+          echo "commit_date=$COMMIT_DATE" >> "$GITHUB_OUTPUT"
+          echo "tag_name=debug" >> "$GITHUB_OUTPUT"
+
+      - name: Get Commit Message
+        id: commit_info
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=format:"%B")
+          # Escape HTML special characters for Telegram HTML parse mode
+          # Convert backticks to <code> tags for better Telegram display
+          COMMIT_MSG_ESCAPED=$(echo "$COMMIT_MSG" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/`\([^`]*\)`/<code>\1<\/code>/g')
+          
+          {
+            echo 'commit_msg<<EOF'
+            echo "$COMMIT_MSG_ESCAPED"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Download Release Asset
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          # Get release info
+          RELEASE_INFO=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ steps.get_version.outputs.tag_name }}")
+          
+          # Get download URL for the zip file
+          DOWNLOAD_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[0].browser_download_url')
+          ASSET_NAME=$(echo "$RELEASE_INFO" | jq -r '.assets[0].name')
+          
+          if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" = "null" ]; then
+            echo "Release asset not found for tag: ${{ steps.get_version.outputs.tag_name }}"
+            exit 1
+          fi
+          
+          # Download the release asset
+          curl -sL -o "$ASSET_NAME" "$DOWNLOAD_URL"
+          echo "asset_name=$ASSET_NAME" >> "$GITHUB_OUTPUT"
+        id: download_asset
+
+      - name: Send to Telegram
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          MESSAGE="📦 <b>Box 模块自动构建</b>
+          
+          <b>版本:</b> ${{ steps.get_version.outputs.version }}
+          <b>提交:</b> <code>${{ steps.get_version.outputs.commit_hash }}</code>
+          <b>日期:</b> ${{ steps.get_version.outputs.commit_date }}
+          <b>内容:</b> ${{ steps.commit_info.outputs.commit_msg }}
+          
+          <a href='https://github.com/${{ github.repository }}'>仓库地址</a> | <a href='https://github.com/${{ github.repository }}/releases/tag/${{ steps.get_version.outputs.tag_name }}'>Release 详情</a>
+
+          #模块更新"
+
+          curl -sS -f -F "chat_id=$TG_CHAT_ID" \
+               -F "document=@${{ steps.download_asset.outputs.asset_name }}" \
+               -F "caption=$MESSAGE" \
+               -F "parse_mode=HTML" \
+               "https://api.telegram.org/bot$TG_BOT_TOKEN/sendDocument"
