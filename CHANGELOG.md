@@ -1,3 +1,6 @@
+#### Changelog 1.2.7 - 01-03-2026
+- 添加xray配置文件
+
 #### Changelog box - 28-02-2026
 - 修复clash
 
