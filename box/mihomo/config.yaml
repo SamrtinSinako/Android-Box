@@ -1,31 +1,3 @@
-# 此为精简配置，如需更为详细的配置，可参考 https://wiki.metacubex.one/config
-# 如不会配置，也可自行寻找懒人配置，例如(Surfing 模块配置)：https://raw.githubusercontent.com/GitMetaio/Surfing/refs/heads/main/box_bll/clash/config.yaml
-
-proxy-providers:
-  proxy1:
-    type: http
-    url: "填写订阅链接"
-    path: ./proxy_provider/proxy1.yaml
-    interval: 3600
-    health-check:
-      enable: true
-      url: https://cp.cloudflare.com
-      interval: 300
-      timeout: 1000
-      tolerance: 100
-  # 多订阅按照下面照葫芦画瓢即可
-  # proxy2:
-  #   type: http
-  #   url: "填写订阅链接"
-  #   path: ./proxy_provider/proxy2.yaml
-  #   interval: 3600
-  #   health-check:
-  #     enable: true
-  #     url: https://cp.cloudflare.com
-  #     interval: 300
-  #     timeout: 1000
-  #     tolerance: 100
-
 mixed-port: 7890
 redir-port: 9797
 tproxy-port: 9898
@@ -33,13 +5,12 @@ mode: Rule
 bind-address: '*'
 ipv6: true
 allow-lan: true
-unified-delay: false
+unified-delay: true
 tcp-concurrent: true
 log-level: error
-find-process-mode: always
-# global-client-fingerprint: random
-external-controller: 0.0.0.0:9090
-external-ui: ./dashboard
+find-process-mode: strict
+external-controller: 127.0.0.1:9090
+external-ui: ./zashboard
 
 profile:
   store-selected: true
@@ -47,73 +18,255 @@ profile:
 
 sniffer:
   enable: true
-  override-destination: false
+  parse-pure-ip: true
+  override-destination: true
   sniff:
     HTTP:
-      ports: [80, 8080-8880]
-      override-destination: true
+      ports:
+        - 80
+        - 8080-8880
     TLS:
-      ports: [443, 8443]
-    QUIC:
-      ports: [443, 8443]
-
-tun:
-  enable: true
-  device: meta
-  stack: gvisor
-  dns-hijack: [any:53, tcp://any:53]
-  udp-timeout: 300
-  auto-route: true
-  auto-redirect: false
-  auto-detect-interface: true
-  strict-route: false
+      ports:
+        - 443
+        - 8443
+  skip-domain:
+    - Mv3-*-*.googlevideo.com
+    - rule-set:private_domain
+    - rule-set:Fake-IP-Filter
 
 dns:
+  enhanced-mode: fake-ip
   enable: true
   ipv6: true
   listen: 0.0.0.0:1053
-  enhanced-mode: fake-ip
   fake-ip-range: 198.18.0.1/16
   fake-ip-filter:
-    - "rule-set:Fake-IP-Filter"
+    - rule-set:Fake-IP-Filter
   proxy-server-nameserver:
     - 223.5.5.5
+    - 120.53.53.53
   nameserver-policy:
-    "rule-set:cn_domain":
+    rule-set:cn_domain:
       - 223.5.5.5
+      - 120.53.53.53
   nameserver:
     - 8.8.8.8
+    - 1.1.1.1
 
 proxies:
-  - {name: DNS_Hijack, type: dns}
+  - name: 香港节点
+    type: socks5
+    server: 61.141.236.11
+    port: 12004
+    username: qq719177532
+    password: myangelbu4ni@
+
+  - name: DNS_Hijack
+    type: dns
+
+  - name: 日本节点1
+    type: vless
+    server: store.ubi.com
+    port: 443
+    uuid: 5fa00393-ce80-433c-8cb9-72e2f9908e0f
+    tls: true
+    servername: vls-5cy.pages.dev
+    network: ws
+    ws-opts:
+      path: /?ed=2560
+      headers:
+        host: vls-5cy.pages.dev
+    tfo: false
+    skip-cert-verify: true
+
+  - name: 日本节点2
+    type: vless
+    server: cdns.doon.eu.org
+    port: 443
+    uuid: 5fa00393-ce80-433c-8cb9-72e2f9908e0f
+    tls: true
+    servername: vls-5cy.pages.dev
+    network: ws
+    ws-opts:
+      path: /?ed=2560
+      headers:
+        host: vls-5cy.pages.dev
+    tfo: false
+    skip-cert-verify: true
+
+  - name: 日本节点3
+    type: trojan
+    server: store.ubi.com
+    port: 443
+    password: 5fa00393-ce80-433c-8cb9-72e2f9908e0f
+    tls: true
+    sni: vls-5cy.pages.dev
+    network: ws
+    ws-opts:
+      path: /?ed=2560
+      headers:
+        host: vls-5cy.pages.dev
+    tfo: false
+    skip-cert-verify: true
+
+  - name: 日本节点4
+    type: trojan
+    server: cdns.doon.eu.org
+    port: 443
+    password: 5fa00393-ce80-433c-8cb9-72e2f9908e0f
+    tls: true
+    sni: vls-5cy.pages.dev
+    network: ws
+    ws-opts:
+      path: /?ed=2560
+      headers:
+        host: vls-5cy.pages.dev
+    tfo: false
+    skip-cert-verify: true
+
+  - name: 新加坡节点1
+    type: vless
+    server: mfa.gov.ua
+    port: 443
+    uuid: 5fa00393-ce80-433c-8cb9-72e2f9908e0f
+    tls: true
+    servername: vls-5cy.pages.dev
+    network: ws
+    ws-opts:
+      path: /?ed=2560
+      headers:
+        host: vls-5cy.pages.dev
+    tfo: false
+    skip-cert-verify: true
+
+  - name: 新加坡节点2
+    type: vless
+    server: cf.090227.xyz
+    port: 443
+    uuid: 5fa00393-ce80-433c-8cb9-72e2f9908e0f
+    tls: true
+    servername: vls-5cy.pages.dev
+    network: ws
+    ws-opts:
+      path: /?ed=2560
+      headers:
+        host: vls-5cy.pages.dev
+    tfo: false
+    skip-cert-verify: true
+
+  - name: 新加坡节点3
+    type: trojan
+    server: mfa.gov.ua
+    port: 443
+    password: 5fa00393-ce80-433c-8cb9-72e2f9908e0f
+    tls: true
+    sni: vls-5cy.pages.dev
+    network: ws
+    ws-opts:
+      path: /?ed=2560
+      headers:
+        host: vls-5cy.pages.dev
+    tfo: false
+    skip-cert-verify: true
+
+  - name: 新加坡节点4
+    type: trojan
+    server: cf.090227.xyz
+    port: 443
+    password: 5fa00393-ce80-433c-8cb9-72e2f9908e0f
+    tls: true
+    sni: vls-5cy.pages.dev
+    network: ws
+    ws-opts:
+      path: /?ed=2560
+      headers:
+        host: vls-5cy.pages.dev
+    tfo: false
+    skip-cert-verify: true
+
+  - name: 韩国节点1
+    type: vless
+    server: cf.130519.xyz
+    port: 443
+    uuid: 5fa00393-ce80-433c-8cb9-72e2f9908e0f
+    tls: true
+    servername: vls-5cy.pages.dev
+    network: ws
+    ws-opts:
+      path: /?ed=2560
+      headers:
+        host: vls-5cy.pages.dev
+    tfo: false
+    skip-cert-verify: true
+
+  - name: 韩国节点2
+    type: trojan
+    server: cf.130519.xyz
+    port: 443
+    password: 5fa00393-ce80-433c-8cb9-72e2f9908e0f
+    tls: true
+    sni: vls-5cy.pages.dev
+    network: ws
+    ws-opts:
+      path: /?ed=2560
+      headers:
+        host: vls-5cy.pages.dev
+    tfo: false
+    skip-cert-verify: true
 
 proxy-groups:
   - name: 国外代理
     type: select
-    include-all: true
-    exclude-type: "dns"
+    proxies:
+      - 香港节点
+      - 国外节点
     icon: https://ghfast.top/raw.githubusercontent.com/Koolson/Qure/refs/heads/master/IconSet/Color/Proxy.png
 
+  - name: 国外节点
+    type: select
+    proxies:
+      - 日本节点1
+      - 日本节点2
+      - 日本节点3
+      - 日本节点4
+      - 新加坡节点1
+      - 新加坡节点2
+      - 新加坡节点3
+      - 新加坡节点4
+      - 韩国节点1
+      - 韩国节点2
+    icon: https://ghfast.top/raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Cloudflare.png
   - name: 国内直连
     type: select
-    proxies: [DIRECT]
-    include-all: true
-    exclude-type: "dns"
+    proxies:
+      - DIRECT
+      - 香港节点
+      - 国外节点
     icon: https://ghfast.top/raw.githubusercontent.com/Koolson/Qure/refs/heads/master/IconSet/Color/China.png
 
   - name: 漏网之鱼
     type: select
-    proxies: [国外代理,国内直连]
+    proxies:
+      - 国外代理
+      - 国内直连
     icon: https://ghfast.top/raw.githubusercontent.com/Koolson/Qure/refs/heads/master/IconSet/Color/Final.png
 
 rule-providers:
+  openai_domain:
+    type: http
+    behavior: domain
+    format: mrs
+    interval: 86400
+    path: ./rule_provider/openai_domain.mrs
+    url: https://ghfast.top/github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geosite/openai.mrs
+    proxy: DIRECT
   Fake-IP-Filter:
     type: http
     behavior: domain
     format: mrs
     interval: 86400
     path: ./rule_provider/Fake-IP-Filter.mrs
-    url: "https://ghfast.top/github.com/DustinWin/ruleset_geodata/raw/refs/heads/mihomo-ruleset/fakeip-filter.mrs"
+    url: https://ghfast.top/github.com/DustinWin/ruleset_geodata/raw/refs/heads/mihomo-ruleset/fakeip-filter.mrs
     proxy: DIRECT
   proxy_domain:
     type: http
@@ -121,7 +274,7 @@ rule-providers:
     format: mrs
     interval: 86400
     path: ./rule_provider/proxy_domain.mrs
-    url: "https://ghfast.top/github.com/DustinWin/ruleset_geodata/raw/refs/heads/mihomo-ruleset/proxy.mrs"
+    url: https://ghfast.top/github.com/DustinWin/ruleset_geodata/raw/refs/heads/mihomo-ruleset/proxy.mrs
     proxy: DIRECT
   cn_ip:
     type: http
@@ -129,7 +282,7 @@ rule-providers:
     format: mrs
     interval: 86400
     path: ./rule_provider/cn_ip.mrs
-    url: "https://ghfast.top/github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geoip/cn.mrs"
+    url: https://ghfast.top/github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geoip/cn.mrs
     proxy: DIRECT
   private_ip:
     type: http
@@ -137,7 +290,7 @@ rule-providers:
     format: mrs
     interval: 86400
     path: ./rule_provider/private_ip.mrs
-    url: "https://ghfast.top/github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geoip/private.mrs"
+    url: https://ghfast.top/github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geoip/private.mrs
     proxy: DIRECT
   cn_domain:
     type: http
@@ -145,7 +298,7 @@ rule-providers:
     format: mrs
     interval: 86400
     path: ./rule_provider/cn_domain.mrs
-    url: "https://ghfast.top/github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geosite/cn.mrs"
+    url: https://ghfast.top/github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geosite/cn.mrs
     proxy: DIRECT
   private_domain:
     type: http
@@ -153,11 +306,42 @@ rule-providers:
     format: mrs
     interval: 86400
     path: ./rule_provider/private_domain.mrs
-    url: "https://ghfast.top/github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geosite/private.mrs"
+    url: https://ghfast.top/github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geosite/private.mrs
     proxy: DIRECT
-  
+  fcm_push:
+    type: http
+    behavior: domain
+    format: mrs
+    interval: 86400
+    path: ./rule_provider/googlefcm.mrs
+    url: https://ghfast.top/github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geosite/googlefcm.mrs
+    proxy: DIRECT
+
 rules:
   - DST-PORT,53,DNS_Hijack
+  - AND,((NETWORK,udp),(DST-PORT,443)),REJECT
+  - RULE-SET,openai_domain,国外节点
+  - PROCESS-NAME,com.anthropic.claude,国外节点
+  - PROCESS-NAME,com.google.android.googlequicksearchbox,国外节点
+  - RULE-SET,fcm_push,DIRECT
   - RULE-SET,proxy_domain,国外代理
   - OR,((RULE-SET,cn_ip),(RULE-SET,cn_domain),(RULE-SET,private_ip),(RULE-SET,private_domain)),国内直连
   - MATCH,漏网之鱼
+
+tun:
+  enable: false
+  mtu: 9000
+  device: meta
+  stack: mixed
+  dns-hijack:
+    - any:53
+    - tcp://any:53
+  auto-route: true
+  strict-route: true
+  auto-redirect: true
+  auto-detect-interface: true
+  include-android-user:
+    - 0
+    - 10
+  exclude-uid: []
+  include-uid: []
