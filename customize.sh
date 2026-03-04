@@ -329,13 +329,8 @@ fi
 
 [ -z "$(find /data/adb/box/bin -type f -name '*' ! -name '*.bak')" ] && sed -Ei 's/^description=(\[.*][[:space:]]*)?/description=[ 😱 模块已安装但需手动下载内核 ] /g' $MODPATH/module.prop
 
-if [ "$KSU" = "true" ]; then
-  sed -i "s/name=.*/name=Box for KernelSU/g" $MODPATH/module.prop
-elif [ "$APATCH" = "true" ]; then
-  sed -i "s/name=.*/name=Box for APatch/g" $MODPATH/module.prop
-else
-  sed -i "s/name=.*/name=Box for Magisk/g" $MODPATH/module.prop
-fi
+sed -i "s/name=.*/name=Android-Box/g" $MODPATH/module.prop
+
 unzip -o "$ZIPFILE" 'webroot/*' -d "$MODPATH" >&2
 
 ui_print "- 清理残留文件"
