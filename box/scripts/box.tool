@@ -1291,16 +1291,13 @@ webroot() {
   path_webroot="/data/adb/modules/box_for_root/webroot/index.html"
   touch "$path_webroot"
   if [[ "${bin_name}" = @(mihomo|sing-box) ]]; then
-    echo -e '
-  <!DOCTYPE html>
-  <script>
-      document.location = 'http://127.0.0.1:9090/ui/'
-  </script>
-  </html>
-  ' > $path_webroot
-    sed -i "s#document\.location =.*#document.location = 'http://$ip_port/ui/'#" $path_webroot
+echo '<!DOCTYPE html>
+<script>
+    document.location = "https://board.zash.run.place"
+</script>
+</html>' > $path_webroot
   else
-   echo -e '
+    echo -e '
   <!DOCTYPE html>
   <html lang="zh-CN">
   <head>
