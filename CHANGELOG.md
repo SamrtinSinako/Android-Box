@@ -1,3 +1,6 @@
+#### Changelog Box1.0 - 04-03-2026
+- 更新mihomo配置｜更新sing-box配置｜同步上游
+
 #### Changelog 1.2.6 - 06-11-2025
 - 优化 WebUI 不再是固定 dashboard 目录
 - 为模块安装新增删除更新残留选项，新增超时自动选择
