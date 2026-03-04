@@ -1,68 +1,354 @@
 {
+  "log": {
+    "disabled": false,
+    "level": "warn",
+    "timestamp": true,
+    "output": "/data/adb/box/run/sing-box.log"
+  },
   "dns": {
     "servers": [
       {
         "tag": "google",
-        "type": "tls",
-        "server": "8.8.8.8"
+        "type": "https",
+        "server": "8.8.8.8",
+        "detour": "🌐 国外代理"
       },
       {
-        "tag": "local",
+        "tag": "ali",
         "type": "https",
         "server": "223.5.5.5"
+      },
+      {
+        "tag": "fakeip",
+        "type": "fakeip",
+        "inet4_range": "198.18.0.0/15",
+        "inet6_range": "fc00::/18"
       }
     ],
     "rules": [
       {
-        "rule_set": "geosite-geolocation-cn",
-        "server": "local"
+        "query_type": [
+          "A",
+          "AAAA"
+        ],
+        "rule_set": "cn_domain",
+        "action": "route",
+        "server": "ali"
+      },
+      {
+        "query_type": [
+          "A",
+          "AAAA"
+        ],
+        "action": "route",
+        "server": "fakeip",
+        "rewrite_ttl": 1
+      }
+    ],
+    "final": "google",
+    "independent_cache": true
+  },
+  "inbounds": [
+    {
+      "type": "mixed",
+      "listen": "127.0.0.1",
+      "listen_port": 7890
+    },
+    {
+      "type": "tproxy",
+      "tag": "tproxy-in",
+      "listen": "::",
+      "listen_port": 9898
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "🌐 国外代理",
+      "type": "selector",
+      "outbounds": [
+        "🇭🇰 香港节点",
+        "Vless节点",
+        "direct"
+      ],
+      "default": "🇭🇰 香港节点"
+    },
+    {
+      "tag": "🇭🇰 香港节点",
+      "type": "socks",
+      "server": "61.141.236.11",
+      "server_port": 12004,
+      "version": "5",
+      "username": "qq719177532",
+      "password": "myangelbu4ni@"
+    },
+    {
+      "tag": "Vless节点",
+      "type": "selector",
+      "default": "日本节点",
+      "outbounds": [
+        "日本节点",
+        "日本节点2",
+        "新加坡节点",
+        "新加坡节点2",
+        "韩国节点"
+      ]
+    },
+    {
+      "tag": "🇨🇳 国内网站",
+      "type": "selector",
+      "outbounds": [
+        "direct",
+        "🌐 国外代理"
+      ]
+    },
+    {
+      "tag": "direct",
+      "type": "direct"
+    },
+    {
+      "type": "vless",
+      "tag": "日本节点",
+      "server": "store.ubi.com",
+      "server_port": 443,
+      "uuid": "5fa00393-ce80-433c-8cb9-72e2f9908e0f",
+      "tcp_fast_open": false,
+      "tls": {
+        "enabled": true,
+        "server_name": "vls-5cy.pages.dev",
+        "insecure": true
+      },
+      "transport": {
+        "type": "ws",
+        "path": "/?ed=2560",
+        "headers": {
+          "host": "vls-5cy.pages.dev"
+        }
+      },
+      "network": "tcp"
+    },
+    {
+      "type": "vless",
+      "tag": "日本节点2",
+      "server": "cdns.doon.eu.org",
+      "server_port": 443,
+      "uuid": "5fa00393-ce80-433c-8cb9-72e2f9908e0f",
+      "tcp_fast_open": false,
+      "tls": {
+        "enabled": true,
+        "server_name": "vls-5cy.pages.dev",
+        "insecure": true
+      },
+      "transport": {
+        "type": "ws",
+        "path": "/?ed=2560",
+        "headers": {
+          "host": "vls-5cy.pages.dev"
+        }
+      },
+      "network": "tcp"
+    },
+    {
+      "type": "vless",
+      "tag": "新加坡节点",
+      "server": "mfa.gov.ua",
+      "server_port": 443,
+      "uuid": "5fa00393-ce80-433c-8cb9-72e2f9908e0f",
+      "tcp_fast_open": false,
+      "tls": {
+        "enabled": true,
+        "server_name": "vls-5cy.pages.dev",
+        "insecure": true
+      },
+      "transport": {
+        "type": "ws",
+        "path": "/?ed=2560",
+        "headers": {
+          "host": "vls-5cy.pages.dev"
+        }
+      },
+      "network": "tcp"
+    },
+    {
+      "type": "vless",
+      "tag": "新加坡节点2",
+      "server": "cf.090227.xyz",
+      "server_port": 443,
+      "uuid": "5fa00393-ce80-433c-8cb9-72e2f9908e0f",
+      "tcp_fast_open": false,
+      "tls": {
+        "enabled": true,
+        "server_name": "vls-5cy.pages.dev",
+        "insecure": true
+      },
+      "transport": {
+        "type": "ws",
+        "path": "/?ed=2560",
+        "headers": {
+          "host": "vls-5cy.pages.dev"
+        }
+      },
+      "network": "tcp"
+    },
+    {
+      "type": "vless",
+      "tag": "韩国节点",
+      "server": "cf.130519.xyz",
+      "server_port": 443,
+      "uuid": "5fa00393-ce80-433c-8cb9-72e2f9908e0f",
+      "tcp_fast_open": false,
+      "tls": {
+        "enabled": true,
+        "server_name": "vls-5cy.pages.dev",
+        "insecure": true
+      },
+      "transport": {
+        "type": "ws",
+        "path": "/?ed=2560",
+        "headers": {
+          "host": "vls-5cy.pages.dev"
+        }
+      },
+      "network": "tcp"
+    }
+  ],
+  "route": {
+    "default_domain_resolver": {
+      "server": "ali"
+    },
+    "rules": [
+      {
+        "action": "sniff",
+        "sniffer": [
+          "http",
+          "tls",
+          "quic",
+          "dns"
+        ],
+        "timeout": "500ms"
       },
       {
         "type": "logical",
-        "mode": "and",
+        "mode": "or",
         "rules": [
           {
-            "rule_set": "geosite-geolocation-!cn",
-            "invert": true
+            "port": 53
           },
           {
-            "rule_set": "geoip-cn"
+            "protocol": "dns"
           }
         ],
-        "server": "local"
+        "action": "hijack-dns"
+      },
+      {
+        "ip_is_private": true,
+        "action": "route",
+        "outbound": "direct"
+      },
+      {
+        "ip_cidr": [
+          "198.18.0.0/15",
+          "fc00::/18"
+        ],
+        "action": "route",
+        "outbound": "🌐 国外代理"
+      },
+      {
+        "package_name": [
+          "com.google.android.googlequicksearchbox"
+        ],
+        "action": "route",
+        "outbound": "Vless节点"
+      },
+      {
+        "rule_set": [
+          "openai_domain"
+        ],
+        "action": "route",
+        "outbound": "Vless节点"
+      },
+      {
+        "domain_suffix": [
+          "claude.ai",
+          "anthropic.com",
+          "api.anthropic.com",
+          "statsig.anthropic.com"
+        ],
+        "action": "route",
+        "outbound": "Vless节点"
+      },
+      {
+        "rule_set": [
+          "fcm_domain"
+        ],
+        "action": "route",
+        "outbound": "🌐 国外代理"
+      },
+      {
+        "rule_set": [
+          "proxy_domain"
+        ],
+        "action": "route",
+        "outbound": "🌐 国外代理"
+      },
+      {
+        "rule_set": [
+          "cn_ip",
+          "cn_domain"
+        ],
+        "action": "route",
+        "outbound": "🇨🇳 国内网站"
       }
-    ]
-  },
-  "route": {
-    "default_domain_resolver": "local",
+    ],
     "rule_set": [
       {
+        "tag": "cn_ip",
         "type": "remote",
-        "tag": "geosite-geolocation-cn",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-cn.srs"
+        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geoip/cn.srs",
+        "download_detour": "🌐 国外代理"
       },
       {
+        "tag": "cn_domain",
         "type": "remote",
-        "tag": "geosite-geolocation-!cn",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-!cn.srs"
+        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo-lite/geosite/cn.srs",
+        "download_detour": "🌐 国外代理"
       },
       {
+        "tag": "openai_domain",
         "type": "remote",
-        "tag": "geoip-cn",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs"
+        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/openai.srs",
+        "download_detour": "🌐 国外代理"
+      },
+      {
+        "tag": "proxy_domain",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/geolocation-!cn.srs",
+        "download_detour": "🌐 国外代理"
+      },
+      {
+        "tag": "fcm_domain",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/googlefcm.srs",
+        "download_detour": "🌐 国外代理"
       }
-    ]
+    ],
+    "final": "🌐 国外代理",
+    "auto_detect_interface": true
   },
   "experimental": {
+    "clash_api": {
+      "external_controller": "0.0.0.0:9090",
+      "external_ui": "zashboard"
+    },
     "cache_file": {
       "enabled": true,
+      "path": "/data/adb/box/sing-box/cache.db",
+      "store_fakeip": true,
       "store_rdrc": true
-    },
-    "clash_api": {
-      "default_mode": "Enhanced"
     }
   }
 }
