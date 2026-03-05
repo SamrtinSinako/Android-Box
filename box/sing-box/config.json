@@ -217,18 +217,14 @@
         "outbound": "🌐 国外代理"
       },
       {
-        "network": "udp",
-        "port": 443,
-        "action": "route",
-        "outbound": "direct"
-      },
-      {
         "package_name": ["com.google.android.googlequicksearchbox"],
+        "network": "tcp",
         "action": "route",
         "outbound": "Vless节点"
       },
       {
         "rule_set": ["openai_domain"],
+        "network": "tcp",
         "action": "route",
         "outbound": "Vless节点"
       },
@@ -239,13 +235,14 @@
           "api.anthropic.com",
           "statsig.anthropic.com"
         ],
+        "network": "tcp",
         "action": "route",
         "outbound": "Vless节点"
       },
       {
         "rule_set": ["fcm_domain"],
         "action": "route",
-        "outbound": "🌐 国外代理"
+        "outbound": "direct"
       },
       {
         "rule_set": ["proxy_domain"],
@@ -292,7 +289,7 @@
         "type": "remote",
         "format": "binary",
         "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/googlefcm.srs",
-        "download_detour": "🌐 国外代理"
+        "download_detour": "direct"
       }
     ],
     "final": "🌐 国外代理",
