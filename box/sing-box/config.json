@@ -229,6 +229,7 @@
           "api.anthropic.com",
           "statsig.anthropic.com"
         ],
+        "network": "tcp",
         "action": "route",
         "outbound": "Vless节点"
       },
@@ -241,6 +242,11 @@
         "rule_set": ["cn_ip", "cn_domain"],
         "action": "route",
         "outbound": "🇨🇳 国内网站"
+      },
+      {
+        "network": "udp",
+        "action": "route",
+        "outbound": "🌐 国外代理"
       }
     ],
     "rule_set": [
