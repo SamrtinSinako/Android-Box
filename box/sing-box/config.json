@@ -11,7 +11,7 @@
         "tag": "google",
         "type": "https",
         "server": "8.8.8.8",
-        "detour": "Vless节点"
+        "detour": "🌐 国外代理"
       },
       {
         "tag": "ali",
@@ -45,7 +45,7 @@
         "rewrite_ttl": 1
       }
     ],
-    "final": "ali",
+    "final": "google",
     "independent_cache": true
   },
   "inbounds": [
@@ -103,7 +103,8 @@
     },
     {
       "tag": "direct",
-      "type": "direct"
+      "type": "direct",
+      "fallback_delay": "4ms"
     },
     {
       "type": "vless",
@@ -111,7 +112,6 @@
       "server": "store.ubi.com",
       "server_port": 443,
       "uuid": "5fa00393-ce80-433c-8cb9-72e2f9908e0f",
-      "tcp_fast_open": false,
       "tls": {
         "enabled": true,
         "server_name": "vls-5cy.pages.dev",
@@ -123,8 +123,7 @@
         "headers": {
           "host": "vls-5cy.pages.dev"
         }
-      },
-      "network": "tcp"
+      }
     },
     {
       "type": "vless",
@@ -132,7 +131,6 @@
       "server": "cdns.doon.eu.org",
       "server_port": 443,
       "uuid": "5fa00393-ce80-433c-8cb9-72e2f9908e0f",
-      "tcp_fast_open": false,
       "tls": {
         "enabled": true,
         "server_name": "vls-5cy.pages.dev",
@@ -144,8 +142,7 @@
         "headers": {
           "host": "vls-5cy.pages.dev"
         }
-      },
-      "network": "tcp"
+      }
     },
     {
       "type": "vless",
@@ -153,7 +150,6 @@
       "server": "mfa.gov.ua",
       "server_port": 443,
       "uuid": "5fa00393-ce80-433c-8cb9-72e2f9908e0f",
-      "tcp_fast_open": false,
       "tls": {
         "enabled": true,
         "server_name": "vls-5cy.pages.dev",
@@ -165,8 +161,7 @@
         "headers": {
           "host": "vls-5cy.pages.dev"
         }
-      },
-      "network": "tcp"
+      }
     },
     {
       "type": "vless",
@@ -174,7 +169,6 @@
       "server": "cf.090227.xyz",
       "server_port": 443,
       "uuid": "5fa00393-ce80-433c-8cb9-72e2f9908e0f",
-      "tcp_fast_open": false,
       "tls": {
         "enabled": true,
         "server_name": "vls-5cy.pages.dev",
@@ -186,8 +180,7 @@
         "headers": {
           "host": "vls-5cy.pages.dev"
         }
-      },
-      "network": "tcp"
+      }
     },
     {
       "type": "vless",
@@ -195,7 +188,6 @@
       "server": "cf.130519.xyz",
       "server_port": 443,
       "uuid": "5fa00393-ce80-433c-8cb9-72e2f9908e0f",
-      "tcp_fast_open": false,
       "tls": {
         "enabled": true,
         "server_name": "vls-5cy.pages.dev",
@@ -207,8 +199,7 @@
         "headers": {
           "host": "vls-5cy.pages.dev"
         }
-      },
-      "network": "tcp"
+      }
     }
   ],
   "route": {
@@ -221,6 +212,7 @@
         "sniffer": [
           "http",
           "tls",
+          "quic",
           "dns"
         ],
         "timeout": "500ms"
@@ -245,13 +237,6 @@
       },
       {
         "ip_cidr": [
-          "110.43.0.0/16"
-        ],
-        "action": "route",
-        "outbound": "direct"
-      },
-      {
-        "ip_cidr": [
           "198.18.0.0/15",
           "fc00::/18"
         ],
@@ -259,20 +244,24 @@
         "outbound": "🌐 国外代理"
       },
       {
-        "rule_set": [
-          "openai_domain",
-          "gemini_domain"
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "rule_set": [
+              "openai_domain",
+              "gemini_domain"
+            ]
+          },
+          {
+            "domain_suffix": [
+              "claude.ai",
+              "anthropic.com",
+              "api.anthropic.com",
+              "statsig.anthropic.com"
+            ]
+          }
         ],
-        "network": "tcp",
-        "action": "route",
-        "outbound": "Vless节点"
-      },
-      {
-        "domain_suffix": [
-          "claude.ai",
-          "anthropic.com"
-        ],
-        "network": "tcp",
         "action": "route",
         "outbound": "Vless节点"
       },
@@ -285,16 +274,18 @@
       },
       {
         "rule_set": [
+          "proxy_domain"
+        ],
+        "action": "route",
+        "outbound": "🌐 国外代理"
+      },
+      {
+        "rule_set": [
           "cn_ip",
           "cn_domain"
         ],
         "action": "route",
         "outbound": "🇨🇳 国内网站"
-      },
-      {
-        "network": "udp",
-        "action": "route",
-        "outbound": "direct"
       }
     ],
     "rule_set": [
@@ -327,11 +318,18 @@
         "download_detour": "🌐 国外代理"
       },
       {
+        "tag": "proxy_domain",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/geolocation-!cn.srs",
+        "download_detour": "🌐 国外代理"
+      },
+      {
         "tag": "fcm_domain",
         "type": "remote",
         "format": "binary",
         "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/googlefcm.srs",
-        "download_detour": "direct"
+        "download_detour": "🌐 国外代理"
       }
     ],
     "final": "🌐 国外代理",
