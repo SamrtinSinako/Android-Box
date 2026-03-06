@@ -189,7 +189,7 @@
     "rules": [
       {
         "action": "sniff",
-        "sniffer": ["http", "tls", "quic", "dns"],
+        "sniffer": ["http", "tls", "dns"],
         "timeout": "500ms"
       },
       {
@@ -217,13 +217,7 @@
         "outbound": "🌐 国外代理"
       },
       {
-        "package_name": ["com.google.android.googlequicksearchbox"],
-        "network": "tcp",
-        "action": "route",
-        "outbound": "Vless节点"
-      },
-      {
-        "rule_set": ["openai_domain"],
+        "rule_set": ["openai_domain", "gemini_domain"],
         "network": "tcp",
         "action": "route",
         "outbound": "Vless节点"
@@ -235,7 +229,6 @@
           "api.anthropic.com",
           "statsig.anthropic.com"
         ],
-        "network": "tcp",
         "action": "route",
         "outbound": "Vless节点"
       },
@@ -243,11 +236,6 @@
         "rule_set": ["fcm_domain"],
         "action": "route",
         "outbound": "direct"
-      },
-      {
-        "rule_set": ["proxy_domain"],
-        "action": "route",
-        "outbound": "🌐 国外代理"
       },
       {
         "rule_set": ["cn_ip", "cn_domain"],
@@ -278,10 +266,10 @@
         "download_detour": "🌐 国外代理"
       },
       {
-        "tag": "proxy_domain",
+        "tag": "gemini_domain",
         "type": "remote",
         "format": "binary",
-        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/geolocation-!cn.srs",
+        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/google-gemini.srs",
         "download_detour": "🌐 国外代理"
       },
       {
