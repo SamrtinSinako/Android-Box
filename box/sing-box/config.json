@@ -22,7 +22,7 @@
         "tag": "fakeip",
         "type": "fakeip",
         "inet4_range": "198.18.0.0/15",
-        "inet6_range": "fc00::/18"
+        "inet6_range": "fd00::/18"
       }
     ],
     "rules": [
@@ -39,6 +39,9 @@
         "query_type": [
           "A",
           "AAAA"
+        ],
+        "inbound": [
+          "tproxy-in"
         ],
         "action": "route",
         "server": "fakeip",
@@ -58,7 +61,9 @@
       "type": "tproxy",
       "tag": "tproxy-in",
       "listen": "::",
-      "listen_port": 9898
+      "listen_port": 9898,
+      "udp_timeout": "5m",
+      "tcp_fast_open": true
     }
   ],
   "outbounds": [
@@ -212,7 +217,6 @@
         "sniffer": [
           "http",
           "tls",
-          "quic",
           "dns"
         ],
         "timeout": "500ms"
@@ -238,7 +242,7 @@
       {
         "ip_cidr": [
           "198.18.0.0/15",
-          "fc00::/18"
+          "fd00::/18"
         ],
         "action": "route",
         "outbound": "🌐 国外代理"
@@ -258,7 +262,10 @@
               "claude.ai",
               "anthropic.com",
               "api.anthropic.com",
-              "statsig.anthropic.com"
+              "statsig.anthropic.com",
+              "gemini.google.com",
+              "generativelanguage.googleapis.com",
+              "alkalimakersuite-pa.clients6.google.com"
             ]
           }
         ],
@@ -271,6 +278,20 @@
         ],
         "action": "route",
         "outbound": "direct"
+      },
+      {
+        "domain_suffix": [
+          "kwaicdn.com",
+          "kwimgs.com",
+          "kwaishop.com",
+          "inkuai.com",
+          "k-dyn.com",
+          "etoote.com",
+          "kuaishou.com",
+          "ksapisrv.com"
+        ],
+        "action": "route",
+        "outbound": "🇨🇳 国内网站"
       },
       {
         "rule_set": [
@@ -333,7 +354,8 @@
       }
     ],
     "final": "🌐 国外代理",
-    "auto_detect_interface": true
+    "auto_detect_interface": true,
+    "default_mark": 100
   },
   "experimental": {
     "clash_api": {
