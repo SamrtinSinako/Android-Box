@@ -1,3 +1,6 @@
+#### Changelog 1.15 - 08-03-2026
+- singbox日志占用低无报错，修复回环问题，稳定版本
+
 #### Changelog 1.14 - 06-03-2026
 - 重构config.json
 
