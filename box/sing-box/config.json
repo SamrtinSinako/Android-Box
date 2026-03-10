@@ -28,10 +28,6 @@
     ],
     "rules": [
       {
-        "query_type": [
-          "A",
-          "AAAA"
-        ],
         "rule_set": "cn_domain",
         "action": "route",
         "server": "ali"
@@ -249,25 +245,6 @@
       },
       {
         "ip_is_private": true,
-        "action": "route",
-        "outbound": "direct"
-      },
-      {
-        "domain_suffix": [
-          "qq.com",
-          "tencent.com",
-          "wegame.com.cn",
-          "wegame.com",
-          "jcjc.qq.com",
-          "timi.qq.com",
-          "igamecj.com",
-          "gtimg.cn",
-          "game.qq.com",
-          "servicewechat.com",
-          "myqcloud.com",
-          "qpic.cn",
-          "qlogo.cn"
-        ],
         "action": "route",
         "outbound": "direct"
       },
