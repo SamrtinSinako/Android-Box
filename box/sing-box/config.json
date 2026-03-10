@@ -16,7 +16,8 @@
       {
         "tag": "ali",
         "type": "https",
-        "server": "223.6.6.6"
+        "server": "223.5.5.5",
+        "detour": "direct"
       },
       {
         "tag": "fakeip",
@@ -252,6 +253,25 @@
         "outbound": "direct"
       },
       {
+        "domain_suffix": [
+          "qq.com",
+          "tencent.com",
+          "wegame.com.cn",
+          "wegame.com",
+          "jcjc.qq.com",
+          "timi.qq.com",
+          "igamecj.com",
+          "gtimg.cn",
+          "game.qq.com",
+          "servicewechat.com",
+          "myqcloud.com",
+          "qpic.cn",
+          "qlogo.cn"
+        ],
+        "action": "route",
+        "outbound": "direct"
+      },
+      {
         "rule_set": [
           "cn_ip",
           "cn_domain"
@@ -300,20 +320,6 @@
         "outbound": "direct"
       },
       {
-        "domain_suffix": [
-          "kwaicdn.com",
-          "kwimgs.com",
-          "kwaishop.com",
-          "inkuai.com",
-          "k-dyn.com",
-          "etoote.com",
-          "kuaishou.com",
-          "ksapisrv.com"
-        ],
-        "action": "route",
-        "outbound": "🇨🇳 国内网站"
-      },
-      {
         "rule_set": [
           "proxy_domain"
         ],
@@ -333,7 +339,7 @@
         "tag": "cn_domain",
         "type": "remote",
         "format": "binary",
-        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo-lite/geosite/cn.srs",
+        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/cn.srs",
         "download_detour": "🌐 国外代理"
       },
       {
