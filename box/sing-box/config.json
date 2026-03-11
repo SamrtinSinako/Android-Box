@@ -40,21 +40,8 @@
         "inbound": [
           "tproxy-in"
         ],
-        "rule_set": "cn_domain",
         "action": "route",
-        "server": "ali"
-      },
-      {
-        "query_type": [
-          "A",
-          "AAAA"
-        ],
-        "inbound": [
-          "tproxy-in"
-        ],
-        "action": "route",
-        "server": "fakeip",
-        "rewrite_ttl": 1
+        "server": "fakeip"
       }
     ],
     "final": "google",
@@ -81,7 +68,7 @@
       "type": "selector",
       "outbounds": [
         "🇭🇰 香港节点",
-        "Vless节点",
+        "CloudFlare节点",
         "direct"
       ],
       "default": "🇭🇰 香港节点"
@@ -96,7 +83,7 @@
       "password": "myangelbu4ni@"
     },
     {
-      "tag": "Vless节点",
+      "tag": "CloudFlare节点",
       "type": "selector",
       "default": "日本节点",
       "outbounds": [
@@ -249,14 +236,6 @@
         "outbound": "direct"
       },
       {
-        "rule_set": [
-          "cn_ip",
-          "cn_domain"
-        ],
-        "action": "route",
-        "outbound": "🇨🇳 国内网站"
-      },
-      {
         "ip_cidr": [
           "198.18.0.0/15",
           "fd00::/18"
@@ -265,36 +244,24 @@
         "outbound": "🌐 国外代理"
       },
       {
-        "type": "logical",
-        "mode": "or",
-        "rules": [
-          {
-            "rule_set": [
-              "openai_domain",
-              "gemini_domain"
-            ]
-          },
-          {
-            "domain_suffix": [
-              "claude.ai",
-              "anthropic.com",
-              "api.anthropic.com",
-              "statsig.anthropic.com",
-              "gemini.google.com",
-              "generativelanguage.googleapis.com",
-              "alkalimakersuite-pa.clients6.google.com"
-            ]
-          }
-        ],
-        "action": "route",
-        "outbound": "Vless节点"
-      },
-      {
         "rule_set": [
           "fcm_domain"
         ],
         "action": "route",
         "outbound": "direct"
+      },
+      {
+        "rule_set": "AI",
+        "action": "route",
+        "outbound": "CloudFlare节点"
+      },
+      {
+        "rule_set": [
+          "cn_ip",
+          "cn_domain"
+        ],
+        "action": "route",
+        "outbound": "🇨🇳 国内网站"
       },
       {
         "rule_set": [
@@ -320,17 +287,10 @@
         "download_detour": "🌐 国外代理"
       },
       {
-        "tag": "openai_domain",
+        "tag": "AI",
         "type": "remote",
         "format": "binary",
-        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/openai.srs",
-        "download_detour": "🌐 国外代理"
-      },
-      {
-        "tag": "gemini_domain",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/google-gemini.srs",
+        "url": "https://cdn.jsdmirror.com/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/category-ai-!cn.srs",
         "download_detour": "🌐 国外代理"
       },
       {
