@@ -28,24 +28,31 @@
     ],
     "rules": [
       {
+        "rule_set": "fcm_domain",
+        "action": "route",
+        "server": "ali"
+      },
+      {
         "rule_set": "cn_domain",
         "action": "route",
         "server": "ali"
       },
       {
+        "rule_set": [
+          "proxy_domain",
+          "AI"
+        ],
         "query_type": [
           "A",
           "AAAA"
-        ],
-        "inbound": [
-          "tproxy-in"
         ],
         "action": "route",
         "server": "fakeip"
       }
     ],
     "final": "google",
-    "independent_cache": true
+    "independent_cache": true,
+    "strategy": "prefer_ipv4"
   },
   "inbounds": [
     {
@@ -105,7 +112,7 @@
     {
       "tag": "direct",
       "type": "direct",
-      "fallback_delay": "4ms"
+      "fallback_delay": "300ms"
     },
     {
       "type": "vless",
@@ -218,16 +225,7 @@
         "timeout": "500ms"
       },
       {
-        "type": "logical",
-        "mode": "or",
-        "rules": [
-          {
-            "port": 53
-          },
-          {
-            "protocol": "dns"
-          }
-        ],
+        "port": 53,
         "action": "hijack-dns"
       },
       {
@@ -244,9 +242,7 @@
         "outbound": "🌐 国外代理"
       },
       {
-        "rule_set": [
-          "fcm_domain"
-        ],
+        "rule_set": "fcm_domain",
         "action": "route",
         "outbound": "direct"
       },
@@ -264,9 +260,7 @@
         "outbound": "🇨🇳 国内网站"
       },
       {
-        "rule_set": [
-          "proxy_domain"
-        ],
+        "rule_set": "proxy_domain",
         "action": "route",
         "outbound": "🌐 国外代理"
       }
@@ -276,28 +270,28 @@
         "tag": "cn_ip",
         "type": "remote",
         "format": "binary",
-        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geoip/cn.srs",
+        "url": "https://ghfast.top/github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/cnip.srs",
         "download_detour": "🌐 国外代理"
       },
       {
         "tag": "cn_domain",
         "type": "remote",
         "format": "binary",
-        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/cn.srs",
+        "url": "https://ghfast.top/github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/cn.srs",
         "download_detour": "🌐 国外代理"
       },
       {
         "tag": "AI",
         "type": "remote",
         "format": "binary",
-        "url": "https://cdn.jsdmirror.com/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/category-ai-!cn.srs",
+        "url": "https://ghfast.top/github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/ai.srs",
         "download_detour": "🌐 国外代理"
       },
       {
         "tag": "proxy_domain",
         "type": "remote",
         "format": "binary",
-        "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/geolocation-!cn.srs",
+        "url": "https://ghfast.top/github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/proxy.srs",
         "download_detour": "🌐 国外代理"
       },
       {
