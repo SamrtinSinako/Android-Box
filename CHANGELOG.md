@@ -1,3 +1,6 @@
+#### Changelog 1.31 - 15-03-2026
+- 更新json
+
 #### Changelog 1.3 - 13-03-2026
 - 更新singbox配置文件
 
