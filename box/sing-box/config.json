@@ -1,7 +1,7 @@
 {
   "log": {
     "disabled": false,
-    "level": "warn",
+    "level": "fatal",
     "timestamp": true,
     "output": "/data/adb/box/run/sing-box.log"
   },
@@ -303,8 +303,7 @@
       }
     ],
     "final": "🌐 国外代理",
-    "auto_detect_interface": true,
-    "default_mark": 16777216
+    "auto_detect_interface": true
   },
   "experimental": {
     "clash_api": {
