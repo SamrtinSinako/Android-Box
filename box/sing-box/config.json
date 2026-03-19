@@ -247,6 +247,10 @@
         "outbound": "direct"
       },
       {
+        "rule_set": "ads",
+        "action": "reject"
+      },
+      {
         "rule_set": "AI",
         "action": "route",
         "outbound": "CloudFlare节点"
@@ -299,6 +303,13 @@
         "type": "remote",
         "format": "binary",
         "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/googlefcm.srs",
+        "download_detour": "🌐 国外代理"
+      },
+      {
+        "tag": "ads",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://ghfast.top/github.com/DustinWin/ruleset_geodata/releases/download/sing-box-ruleset/ads.srs",
         "download_detour": "🌐 国外代理"
       }
     ],
